@@ -1,156 +1,87 @@
 "use client";
 
-import React from 'react';
+import React, { useMemo } from 'react';
 import PageBreadcrumb from '@/components/common/PageBreadCrumb';
 import Link from 'next/link';
 import { mockAppointments, mockRooms } from '@/mock-data';
 import { AppointmentStatusValue, RoomStatusValue } from '@/types/hotel';
 import PageMetadata from '@/components/common/PageMetadata';
+import { FaSignInAlt, FaSignOutAlt, FaCalendarCheck, FaBed } from 'react-icons/fa';
 
 const HotelManagementDashboard = () => {
-  // Count appointments by status
-  const todayCheckIns = mockAppointments.filter(
-    (appointment) => 
-      appointment.status.value === AppointmentStatusValue.APPROVED && 
-      new Date(appointment.checkInDate).toDateString() === new Date().toDateString()
-  ).length;
+  // Funciones de utilidad para fechas
+  const isSameDay = (date1: string | Date, date2: Date = new Date()) => {
+    const d1 = new Date(date1);
+    return d1.toDateString() === date2.toDateString();
+  };
 
-  const todayCheckOuts = mockAppointments.filter(
-    (appointment) => 
-      appointment.status.value === AppointmentStatusValue.CHECK_IN && 
-      new Date(appointment.checkOutDate).toDateString() === new Date().toDateString()
-  ).length;
+  // Memoizar los conteos de appointments para evitar recálculos innecesarios
+  const appointmentCounts = useMemo(() => {
+    
+    return {
+      checkIns: mockAppointments.filter(
+        appointment => 
+          appointment.status.value === AppointmentStatusValue.APPROVED && 
+          isSameDay(appointment.checkInDate)
+      ).length,
 
-  const pendingReservations = mockAppointments.filter(
-    (appointment) => appointment.status.value === AppointmentStatusValue.REQUESTED
-  ).length;
+      checkOuts: mockAppointments.filter(
+        appointment => 
+          appointment.status.value === AppointmentStatusValue.CHECK_IN && 
+          isSameDay(appointment.checkOutDate)
+      ).length,
 
-  // Count rooms by status
-  const availableRooms = mockRooms.filter(
-    (room) => room.status.value === RoomStatusValue.AVAILABLE
-  ).length;
+      pending: mockAppointments.filter(
+        appointment => appointment.status.value === AppointmentStatusValue.REQUESTED
+      ).length
+    };
+  }, []);
 
-  const cleaningRooms = mockRooms.filter(
-    (room) => room.status.value === RoomStatusValue.CLEANING
-  ).length;
+  // Memoizar los conteos de habitaciones por estado
+  const roomCounts = useMemo(() => {
+    const counts = mockRooms.reduce((acc, room) => {
+      const status = room.status.value;
+      acc[status] = (acc[status] || 0) + 1;
+      return acc;
+    }, {} as Record<RoomStatusValue, number>);
 
-  const maintenanceRooms = mockRooms.filter(
-    (room) => room.status.value === RoomStatusValue.MAINTENANCE
-  ).length;
+    return {
+      available: counts[RoomStatusValue.AVAILABLE] || 0,
+      cleaning: counts[RoomStatusValue.CLEANING] || 0,
+      maintenance: counts[RoomStatusValue.MAINTENANCE] || 0,
+      unavailable: counts[RoomStatusValue.UNAVAILABLE] || 0
+    };
+  }, []);
 
-  const unavailableRooms = mockRooms.filter(
-    (room) => room.status.value === RoomStatusValue.UNAVAILABLE
-  ).length;
-
-  // Get status color
-  const getStatusColor = (status: RoomStatusValue) => {
-    switch (status) {
-      case RoomStatusValue.AVAILABLE:
-        return 'bg-success-500';
-      case RoomStatusValue.UNAVAILABLE:
-        return 'bg-red-500';
-      case RoomStatusValue.CLEANING:
-        return 'bg-orange-500';
-      case RoomStatusValue.MAINTENANCE:
-        return 'bg-blue-500';
-      default:
-        return 'bg-gray-500';
-    }
+  // Mapa de colores por estado
+  const statusColorMap: Record<RoomStatusValue, string> = {
+    [RoomStatusValue.AVAILABLE]: 'bg-success-500',
+    [RoomStatusValue.UNAVAILABLE]: 'bg-red-500',
+    [RoomStatusValue.CLEANING]: 'bg-orange-500',
+    [RoomStatusValue.MAINTENANCE]: 'bg-blue-500'
   };
 
   // Definir las tarjetas de estadísticas
   const statCards = [
     {
       title: 'Check-ins de Hoy',
-      value: todayCheckIns,
-      icon: (
-        <svg
-          className="fill-primary dark:fill-white"
-          width="22"
-          height="22"
-          viewBox="0 0 22 22"
-          fill="none"
-          xmlns="http://www.w3.org/2000/svg"
-        >
-          <path
-            d="M21.1063 18.0469L19.3875 3.23126C19.2157 1.71876 17.9438 0.584381 16.3969 0.584381H5.56878C4.05628 0.584381 2.78441 1.71876 2.57816 3.23126L0.859406 18.0469C0.756281 18.9063 1.03128 19.7313 1.61566 20.3844C2.20003 21.0375 2.99066 21.3813 3.85003 21.3813H18.1157C18.975 21.3813 19.8 21.0031 20.35 20.3844C20.9 19.7656 21.2094 18.9063 21.1063 18.0469ZM19.2157 19.3531C18.9407 19.6625 18.5625 19.8344 18.15 19.8344H3.85003C3.43753 19.8344 3.05941 19.6625 2.78441 19.3531C2.50941 19.0438 2.37191 18.6313 2.44066 18.2188L4.12503 3.43751C4.19378 2.71563 4.81253 2.16563 5.56878 2.16563H16.4313C17.1532 2.16563 17.7719 2.71563 17.875 3.43751L19.5938 18.2531C19.6282 18.6656 19.4907 19.0438 19.2157 19.3531Z"
-            fill=""
-          />
-          <path
-            d="M14.3345 5.29375C13.922 5.39688 13.647 5.80938 13.7501 6.22188C13.7845 6.42813 13.8189 6.63438 13.8189 6.80625C13.8189 8.35313 12.547 9.625 11.0001 9.625C9.45327 9.625 8.1814 8.35313 8.1814 6.80625C8.1814 6.6 8.21577 6.42813 8.25015 6.22188C8.35327 5.80938 8.07827 5.39688 7.66577 5.29375C7.25327 5.19063 6.84077 5.46563 6.73765 5.87813C6.6689 6.1875 6.63452 6.49688 6.63452 6.80625C6.63452 9.2125 8.5939 11.1719 11.0001 11.1719C13.4064 11.1719 15.3658 9.2125 15.3658 6.80625C15.3658 6.49688 15.3314 6.1875 15.2626 5.87813C15.1595 5.46563 14.747 5.225 14.3345 5.29375Z"
-            fill=""
-          />
-        </svg>
-      )
+      value: appointmentCounts.checkIns,
+      icon: <FaSignInAlt className="w-6 h-6 fill-primary dark:fill-white" />
     },
     {
       title: 'Check-outs de Hoy',
-      value: todayCheckOuts,
-      icon: (
-        <svg
-          className="fill-primary dark:fill-white"
-          width="22"
-          height="22"
-          viewBox="0 0 22 22"
-          fill="none"
-          xmlns="http://www.w3.org/2000/svg"
-        >
-          <path
-            d="M21.1063 18.0469L19.3875 3.23126C19.2157 1.71876 17.9438 0.584381 16.3969 0.584381H5.56878C4.05628 0.584381 2.78441 1.71876 2.57816 3.23126L0.859406 18.0469C0.756281 18.9063 1.03128 19.7313 1.61566 20.3844C2.20003 21.0375 2.99066 21.3813 3.85003 21.3813H18.1157C18.975 21.3813 19.8 21.0031 20.35 20.3844C20.9 19.7656 21.2094 18.9063 21.1063 18.0469ZM19.2157 19.3531C18.9407 19.6625 18.5625 19.8344 18.15 19.8344H3.85003C3.43753 19.8344 3.05941 19.6625 2.78441 19.3531C2.50941 19.0438 2.37191 18.6313 2.44066 18.2188L4.12503 3.43751C4.19378 2.71563 4.81253 2.16563 5.56878 2.16563H16.4313C17.1532 2.16563 17.7719 2.71563 17.875 3.43751L19.5938 18.2531C19.6282 18.6656 19.4907 19.0438 19.2157 19.3531Z"
-            fill=""
-          />
-          <path
-            d="M14.3345 5.29375C13.922 5.39688 13.647 5.80938 13.7501 6.22188C13.7845 6.42813 13.8189 6.63438 13.8189 6.80625C13.8189 8.35313 12.547 9.625 11.0001 9.625C9.45327 9.625 8.1814 8.35313 8.1814 6.80625C8.1814 6.6 8.21577 6.42813 8.25015 6.22188C8.35327 5.80938 8.07827 5.39688 7.66577 5.29375C7.25327 5.19063 6.84077 5.46563 6.73765 5.87813C6.6689 6.1875 6.63452 6.49688 6.63452 6.80625C6.63452 9.2125 8.5939 11.1719 11.0001 11.1719C13.4064 11.1719 15.3658 9.2125 15.3658 6.80625C15.3658 6.49688 15.3314 6.1875 15.2626 5.87813C15.1595 5.46563 14.747 5.225 14.3345 5.29375Z"
-            fill=""
-          />
-        </svg>
-      )
+      value: appointmentCounts.checkOuts,
+      icon: <FaSignOutAlt className="w-6 h-6 fill-primary dark:fill-white" />
     },
     {
       title: 'Reservas Pendientes',
-      value: pendingReservations,
-      icon: (
-        <svg
-          className="fill-primary dark:fill-white"
-          width="22"
-          height="22"
-          viewBox="0 0 22 22"
-          fill="none"
-          xmlns="http://www.w3.org/2000/svg"
-        >
-          <path
-            d="M21.1063 18.0469L19.3875 3.23126C19.2157 1.71876 17.9438 0.584381 16.3969 0.584381H5.56878C4.05628 0.584381 2.78441 1.71876 2.57816 3.23126L0.859406 18.0469C0.756281 18.9063 1.03128 19.7313 1.61566 20.3844C2.20003 21.0375 2.99066 21.3813 3.85003 21.3813H18.1157C18.975 21.3813 19.8 21.0031 20.35 20.3844C20.9 19.7656 21.2094 18.9063 21.1063 18.0469ZM19.2157 19.3531C18.9407 19.6625 18.5625 19.8344 18.15 19.8344H3.85003C3.43753 19.8344 3.05941 19.6625 2.78441 19.3531C2.50941 19.0438 2.37191 18.6313 2.44066 18.2188L4.12503 3.43751C4.19378 2.71563 4.81253 2.16563 5.56878 2.16563H16.4313C17.1532 2.16563 17.7719 2.71563 17.875 3.43751L19.5938 18.2531C19.6282 18.6656 19.4907 19.0438 19.2157 19.3531Z"
-            fill=""
-          />
-          <path
-            d="M14.3345 5.29375C13.922 5.39688 13.647 5.80938 13.7501 6.22188C13.7845 6.42813 13.8189 6.63438 13.8189 6.80625C13.8189 8.35313 12.547 9.625 11.0001 9.625C9.45327 9.625 8.1814 8.35313 8.1814 6.80625C8.1814 6.6 8.21577 6.42813 8.25015 6.22188C8.35327 5.80938 8.07827 5.39688 7.66577 5.29375C7.25327 5.19063 6.84077 5.46563 6.73765 5.87813C6.6689 6.1875 6.63452 6.49688 6.63452 6.80625C6.63452 9.2125 8.5939 11.1719 11.0001 11.1719C13.4064 11.1719 15.3658 9.2125 15.3658 6.80625C15.3658 6.49688 15.3314 6.1875 15.2626 5.87813C15.1595 5.46563 14.747 5.225 14.3345 5.29375Z"
-            fill=""
-          />
-        </svg>
-      )
+      value: appointmentCounts.pending,
+      icon: <FaCalendarCheck className="w-6 h-6 fill-primary dark:fill-white" />
     },
     {
       title: 'Habitaciones Disponibles',
-      value: availableRooms,
-      icon: (
-        <svg
-          className="fill-primary dark:fill-white"
-          width="22"
-          height="22"
-          viewBox="0 0 22 22"
-          fill="none"
-          xmlns="http://www.w3.org/2000/svg"
-        >
-          <path
-            d="M21.1063 18.0469L19.3875 3.23126C19.2157 1.71876 17.9438 0.584381 16.3969 0.584381H5.56878C4.05628 0.584381 2.78441 1.71876 2.57816 3.23126L0.859406 18.0469C0.756281 18.9063 1.03128 19.7313 1.61566 20.3844C2.20003 21.0375 2.99066 21.3813 3.85003 21.3813H18.1157C18.975 21.3813 19.8 21.0031 20.35 20.3844C20.9 19.7656 21.2094 18.9063 21.1063 18.0469ZM19.2157 19.3531C18.9407 19.6625 18.5625 19.8344 18.15 19.8344H3.85003C3.43753 19.8344 3.05941 19.6625 2.78441 19.3531C2.50941 19.0438 2.37191 18.6313 2.44066 18.2188L4.12503 3.43751C4.19378 2.71563 4.81253 2.16563 5.56878 2.16563H16.4313C17.1532 2.16563 17.7719 2.71563 17.875 3.43751L19.5938 18.2531C19.6282 18.6656 19.4907 19.0438 19.2157 19.3531Z"
-            fill=""
-          />
-          <path
-            d="M14.3345 5.29375C13.922 5.39688 13.647 5.80938 13.7501 6.22188C13.7845 6.42813 13.8189 6.63438 13.8189 6.80625C13.8189 8.35313 12.547 9.625 11.0001 9.625C9.45327 9.625 8.1814 8.35313 8.1814 6.80625C8.1814 6.6 8.21577 6.42813 8.25015 6.22188C8.35327 5.80938 8.07827 5.39688 7.66577 5.29375C7.25327 5.19063 6.84077 5.46563 6.73765 5.87813C6.6689 6.1875 6.63452 6.49688 6.63452 6.80625C6.63452 9.2125 8.5939 11.1719 11.0001 11.1719C13.4064 11.1719 15.3658 9.2125 15.3658 6.80625C15.3658 6.49688 15.3314 6.1875 15.2626 5.87813C15.1595 5.46563 14.747 5.225 14.3345 5.29375Z"
-            fill=""
-          />
-        </svg>
-      )
+      value: roomCounts.available,
+      icon: <FaBed className="w-6 h-6 fill-primary dark:fill-white" />
     }
   ];
 
@@ -184,10 +115,10 @@ const HotelManagementDashboard = () => {
 
   // Definir los estados de habitaciones para mostrar en las estadísticas
   const roomStats = [
-    { status: RoomStatusValue.AVAILABLE, count: availableRooms, label: 'Disponible' },
-    { status: RoomStatusValue.CLEANING, count: cleaningRooms, label: 'Limpieza' },
-    { status: RoomStatusValue.MAINTENANCE, count: maintenanceRooms, label: 'Mantenimiento' },
-    { status: RoomStatusValue.UNAVAILABLE, count: unavailableRooms, label: 'No Disponible' }
+    { status: RoomStatusValue.AVAILABLE, count: roomCounts.available, label: 'Disponible' },
+    { status: RoomStatusValue.CLEANING, count: roomCounts.cleaning, label: 'Limpieza' },
+    { status: RoomStatusValue.MAINTENANCE, count: roomCounts.maintenance, label: 'Mantenimiento' },
+    { status: RoomStatusValue.UNAVAILABLE, count: roomCounts.unavailable, label: 'No Disponible' }
   ];
 
   return (
@@ -232,7 +163,7 @@ const HotelManagementDashboard = () => {
                 <div className="mt-3 flex flex-wrap px-10 justify-center gap-2">
                   {roomStats.map((stat, statIndex) => (
                     <div key={statIndex} className="flex items-center gap-1">
-                      <span className={`h-3 w-3 rounded-full ${getStatusColor(stat.status)}`}></span>
+                      <span className={`h-3 w-3 rounded-full ${statusColorMap[stat.status]}`}></span>
                       <span className="text-xs">{stat.count} {stat.label}</span>
                     </div>
                   ))}
