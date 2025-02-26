@@ -1,4 +1,4 @@
-"use client";
+'use client';
 
 import React, { useMemo } from 'react';
 import PageBreadcrumb from '@/components/common/PageBreadCrumb';
@@ -8,6 +8,7 @@ import PageMetadata from '@/components/common/PageMetadata';
 import StatCard from '@/components/common/StatCard';
 import QuickLinkCard from '@/components/common/QuickLinkCard';
 import { DashboardIcons, IconWrapper } from '@/components/common/icons';
+import { getRoomStatusConfig } from '@/utils/statusColors';
 
 const HotelManagementDashboard = () => {
   // Funciones de utilidad para fechas
@@ -20,20 +21,20 @@ const HotelManagementDashboard = () => {
   const appointmentCounts = useMemo(() => {
     return {
       checkIns: mockAppointments.filter(
-        appointment => 
-          appointment.status.value === AppointmentStatusValue.APPROVED && 
+        appointment =>
+          appointment.status.value === AppointmentStatusValue.APPROVED &&
           isSameDay(appointment.checkInDate)
       ).length,
 
       checkOuts: mockAppointments.filter(
-        appointment => 
-          appointment.status.value === AppointmentStatusValue.CHECK_IN && 
+        appointment =>
+          appointment.status.value === AppointmentStatusValue.CHECK_IN &&
           isSameDay(appointment.checkOutDate)
       ).length,
 
       pending: mockAppointments.filter(
         appointment => appointment.status.value === AppointmentStatusValue.REQUESTED
-      ).length
+      ).length,
     };
   }, []);
 
@@ -49,40 +50,48 @@ const HotelManagementDashboard = () => {
       available: counts[RoomStatusValue.AVAILABLE] || 0,
       cleaning: counts[RoomStatusValue.CLEANING] || 0,
       maintenance: counts[RoomStatusValue.MAINTENANCE] || 0,
-      unavailable: counts[RoomStatusValue.UNAVAILABLE] || 0
+      unavailable: counts[RoomStatusValue.UNAVAILABLE] || 0,
     };
   }, []);
-
-  // Mapa de colores por estado
-  const statusColorMap: Record<RoomStatusValue, string> = {
-    [RoomStatusValue.AVAILABLE]: 'bg-success-500',
-    [RoomStatusValue.UNAVAILABLE]: 'bg-red-500',
-    [RoomStatusValue.CLEANING]: 'bg-orange-500',
-    [RoomStatusValue.MAINTENANCE]: 'bg-blue-500'
-  };
 
   // Definir las tarjetas de estadísticas
   const statCards = [
     {
       title: 'Check-ins de Hoy',
       value: appointmentCounts.checkIns,
-      icon: <IconWrapper className="fill-primary dark:fill-white"><DashboardIcons.CheckIn /></IconWrapper>
+      icon: (
+        <IconWrapper className="fill-primary dark:fill-white">
+          <DashboardIcons.CheckIn />
+        </IconWrapper>
+      ),
     },
     {
       title: 'Check-outs de Hoy',
       value: appointmentCounts.checkOuts,
-      icon: <IconWrapper className="fill-primary dark:fill-white"><DashboardIcons.CheckOut /></IconWrapper>
+      icon: (
+        <IconWrapper className="fill-primary dark:fill-white">
+          <DashboardIcons.CheckOut />
+        </IconWrapper>
+      ),
     },
     {
       title: 'Reservas Pendientes',
       value: appointmentCounts.pending,
-      icon: <IconWrapper className="fill-primary dark:fill-white"><DashboardIcons.Calendar /></IconWrapper>
+      icon: (
+        <IconWrapper className="fill-primary dark:fill-white">
+          <DashboardIcons.Calendar />
+        </IconWrapper>
+      ),
     },
     {
       title: 'Habitaciones Disponibles',
       value: roomCounts.available,
-      icon: <IconWrapper className="fill-primary dark:fill-white"><DashboardIcons.Bed /></IconWrapper>
-    }
+      icon: (
+        <IconWrapper className="fill-primary dark:fill-white">
+          <DashboardIcons.Bed />
+        </IconWrapper>
+      ),
+    },
   ];
 
   // Definir los enlaces rápidos
@@ -91,43 +100,79 @@ const HotelManagementDashboard = () => {
       title: 'Gestión de Habitaciones',
       description: 'Administrar habitaciones y categorías',
       path: '/hotel-management/rooms',
-      icon: <IconWrapper className="fill-primary dark:fill-white mx-auto"><DashboardIcons.Hotel /></IconWrapper>,
-      showRoomStats: true
+      icon: (
+        <IconWrapper className="fill-primary dark:fill-white mx-auto">
+          <DashboardIcons.Hotel />
+        </IconWrapper>
+      ),
+      showRoomStats: true,
     },
     {
       title: 'Reservas',
       description: 'Gestionar reservas y check-ins',
       path: '/hotel-management/reservations',
-      icon: <IconWrapper className="fill-primary dark:fill-white mx-auto"><DashboardIcons.Reservations /></IconWrapper>,
-      showRoomStats: false
+      icon: (
+        <IconWrapper className="fill-primary dark:fill-white mx-auto">
+          <DashboardIcons.Reservations />
+        </IconWrapper>
+      ),
+      showRoomStats: false,
     },
     {
       title: 'Cuadrícula de Habitaciones',
       description: 'Ver calendario de disponibilidad',
       path: '/hotel-management/room-grid',
-      icon: <IconWrapper className="fill-primary dark:fill-white mx-auto"><DashboardIcons.List /></IconWrapper>,
-      showRoomStats: false
+      icon: (
+        <IconWrapper className="fill-primary dark:fill-white mx-auto">
+          <DashboardIcons.List />
+        </IconWrapper>
+      ),
+      showRoomStats: false,
     },
     {
       title: 'Solicitudes Pendientes',
       description: 'Gestionar solicitudes de reserva pendientes',
       path: '/hotel-management/pending',
-      icon: <IconWrapper className="fill-primary dark:fill-white mx-auto"><DashboardIcons.Pending /></IconWrapper>,
-      showRoomStats: false
-    }
+      icon: (
+        <IconWrapper className="fill-primary dark:fill-white mx-auto">
+          <DashboardIcons.Pending />
+        </IconWrapper>
+      ),
+      showRoomStats: false,
+    },
   ];
 
   // Definir los estados de habitaciones para mostrar en las estadísticas
   const roomStats = [
-    { status: RoomStatusValue.AVAILABLE, count: roomCounts.available, label: 'Disponible', color: statusColorMap[RoomStatusValue.AVAILABLE] },
-    { status: RoomStatusValue.CLEANING, count: roomCounts.cleaning, label: 'Limpieza', color: statusColorMap[RoomStatusValue.CLEANING] },
-    { status: RoomStatusValue.MAINTENANCE, count: roomCounts.maintenance, label: 'Mantenimiento', color: statusColorMap[RoomStatusValue.MAINTENANCE] },
-    { status: RoomStatusValue.UNAVAILABLE, count: roomCounts.unavailable, label: 'No Disponible', color: statusColorMap[RoomStatusValue.UNAVAILABLE] }
+    {
+      status: RoomStatusValue.AVAILABLE,
+      count: roomCounts.available,
+      label: 'Disponible',
+      color: getRoomStatusConfig(RoomStatusValue.AVAILABLE).background,
+    },
+    {
+      status: RoomStatusValue.CLEANING,
+      count: roomCounts.cleaning,
+      label: 'Limpieza',
+      color: getRoomStatusConfig(RoomStatusValue.CLEANING).background,
+    },
+    {
+      status: RoomStatusValue.MAINTENANCE,
+      count: roomCounts.maintenance,
+      label: 'Mantenimiento',
+      color: getRoomStatusConfig(RoomStatusValue.MAINTENANCE).background,
+    },
+    {
+      status: RoomStatusValue.UNAVAILABLE,
+      count: roomCounts.unavailable,
+      label: 'No Disponible',
+      color: getRoomStatusConfig(RoomStatusValue.UNAVAILABLE).background,
+    },
   ];
 
   return (
     <>
-      <PageMetadata 
+      <PageMetadata
         title="Panel de Gestión Hotelera | Belfast Backoffice"
         description="Panel de control para la gestión hotelera de Belfast Backoffice"
       />
@@ -143,15 +188,11 @@ const HotelManagementDashboard = () => {
       {/* Enlaces rápidos */}
       <div className="mt-4 grid grid-cols-1 gap-4 md:grid-cols-2 md:gap-6 xl:grid-cols-4 2xl:gap-7.5">
         {quickLinks.map((link, index) => (
-          <QuickLinkCard 
-            key={index} 
-            {...link} 
-            roomStats={link.showRoomStats ? roomStats : []} 
-          />
+          <QuickLinkCard key={index} {...link} roomStats={link.showRoomStats ? roomStats : []} />
         ))}
       </div>
     </>
   );
 };
 
-export default HotelManagementDashboard; 
+export default HotelManagementDashboard;
