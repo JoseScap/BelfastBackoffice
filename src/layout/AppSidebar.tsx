@@ -6,18 +6,17 @@ import { usePathname } from "next/navigation";
 import { useSidebar } from "../context/SidebarContext";
 import {
   BoxCubeIcon,
-  CalenderIcon,
+  // CalenderIcon,
   ChevronDownIcon,
-  GridIcon,
+  // GridIcon,
   HorizontaLDots,
-  ListIcon,
-  PageIcon,
-  PieChartIcon,
-  PlugInIcon,
-  TableIcon,
-  UserCircleIcon,
+  // ListIcon,
+  // PageIcon,
+  // PieChartIcon,
+  // PlugInIcon,
+  // TableIcon,
+  // UserCircleIcon,
 } from "../icons/index";
-import SidebarWidget from "./SidebarWidget";
 
 type NavItem = {
   name: string;
@@ -26,6 +25,8 @@ type NavItem = {
   subItems?: { name: string; path: string; pro?: boolean; new?: boolean }[];
 };
 
+// Comentamos temporalmente los elementos de navegación originales
+/*
 const navItems: NavItem[] = [
   {
     icon: <GridIcon />,
@@ -93,6 +94,29 @@ const othersItems: NavItem[] = [
     ],
   },
 ];
+*/
+
+// Nuevos elementos de navegación para la gestión hotelera
+const navItems: NavItem[] = [
+  // {
+  //   icon: <GridIcon />,
+  //   name: "Dashboard",
+  //   subItems: [{ name: "Ecommerce", path: "/", pro: false }],
+  // },
+  {
+    icon: <BoxCubeIcon />,
+    name: "Gestión Hotelera",
+    subItems: [
+      { name: "Panel Principal", path: "/hotel-management", pro: false },
+      { name: "Habitaciones", path: "/hotel-management/rooms", pro: false, new: true },
+      { name: "Reservas", path: "/hotel-management/reservations", pro: false, new: true },
+      { name: "Cuadrícula de Habitaciones", path: "/hotel-management/room-grid", pro: false, new: true },
+      { name: "Solicitudes Pendientes", path: "/hotel-management/pending", pro: false, new: true },
+    ],
+  },
+];
+
+const othersItems: NavItem[] = [];
 
 const AppSidebar: React.FC = () => {
   const { isExpanded, isMobileOpen, isHovered, setIsHovered } = useSidebar();
@@ -348,7 +372,7 @@ const AppSidebar: React.FC = () => {
                 }`}
               >
                 {isExpanded || isHovered || isMobileOpen ? (
-                  "Menu"
+                  "Menú"
                 ) : (
                   <HorizontaLDots />
                 )}
@@ -365,7 +389,7 @@ const AppSidebar: React.FC = () => {
                 }`}
               >
                 {isExpanded || isHovered || isMobileOpen ? (
-                  "Others"
+                  "Gestión Hotelera"
                 ) : (
                   <HorizontaLDots />
                 )}
@@ -374,7 +398,7 @@ const AppSidebar: React.FC = () => {
             </div>
           </div>
         </nav>
-        {isExpanded || isHovered || isMobileOpen ? <SidebarWidget /> : null}
+        {/* {isExpanded || isHovered || isMobileOpen ? <SidebarWidget /> : null} */}
       </div>
     </aside>
   );
