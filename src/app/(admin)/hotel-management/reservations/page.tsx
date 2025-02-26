@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useCallback } from 'react';
 import PageBreadcrumb from '@/components/common/PageBreadCrumb';
 import { mockAppointments } from '@/mock-data';
 import { AppointmentStatusValue } from '@/types/hotel';
@@ -9,7 +9,7 @@ import PageMetadata from '@/components/common/PageMetadata';
 import SearchFilter from '@/components/common/SearchFilter';
 import { DashboardIcons, IconWrapper } from '@/components/common/icons';
 
-// Constantes y mapeos
+// Tipos
 interface StatusConfig {
   label: string;
   color: string;
@@ -19,6 +19,9 @@ type SourceKey = 'app' | 'manual';
 type StatusKey = AppointmentStatusValue;
 type FilterKey = 'all' | StatusKey;
 type SourceFilterKey = 'all' | SourceKey;
+
+// Constantes
+const ITEMS_PER_PAGE = 10;
 
 const STATUS_CONFIG: Record<StatusKey, StatusConfig> = {
   [AppointmentStatusValue.APPROVED]: { 
@@ -83,7 +86,7 @@ GuestCell.displayName = 'GuestCell';
 
 const RoomCell = React.memo(({ number, categoryName }: { number: number; categoryName: string }) => (
   <TableCell>
-    <p className="text-black dark:text-white">{number}</p>
+    <p className="text-black dark:text-white">#{number}</p>
     <p className="text-sm">{categoryName}</p>
   </TableCell>
 ));
@@ -91,22 +94,22 @@ RoomCell.displayName = 'RoomCell';
 
 const DateCell = React.memo(({ date }: { date: string }) => (
   <TableCell>
-    <p className="text-black dark:text-white">
+    <time dateTime={date} className="text-black dark:text-white">
       {new Date(date).toLocaleDateString('es-ES', {
         year: 'numeric',
         month: 'short',
         day: 'numeric',
       })}
-    </p>
+    </time>
   </TableCell>
 ));
 DateCell.displayName = 'DateCell';
 
 const StatusCell = React.memo(({ status }: { status: StatusKey }) => (
   <TableCell>
-    <p className={`inline-flex rounded-full py-1 px-3 text-sm font-medium ${STATUS_CONFIG[status].color}`}>
+    <span className={`inline-flex rounded-full py-1 px-3 text-sm font-medium ${STATUS_CONFIG[status].color}`}>
       {STATUS_CONFIG[status].label}
-    </p>
+    </span>
   </TableCell>
 ));
 StatusCell.displayName = 'StatusCell';
@@ -129,15 +132,30 @@ const TotalCell = React.memo(({ amount }: { amount: number }) => (
 ));
 TotalCell.displayName = 'TotalCell';
 
-const ActionsCell = React.memo(() => (
+interface ActionsCellProps {
+  onView: () => void;
+  onDelete: () => void;
+}
+
+const ActionsCell = React.memo(({ onView, onDelete }: ActionsCellProps) => (
   <TableCell>
     <div className="flex items-center space-x-3.5">
-      <button className="hover:text-primary" title="Ver detalles">
+      <button 
+        onClick={onView}
+        className="hover:text-primary focus:outline-none focus:ring-2 focus:ring-primary rounded-full p-1" 
+        title="Ver detalles"
+        aria-label="Ver detalles de la reservación"
+      >
         <IconWrapper className="fill-current">
           <DashboardIcons.Search />
         </IconWrapper>
       </button>
-      <button className="hover:text-primary" title="Eliminar reservación">
+      <button 
+        onClick={onDelete}
+        className="hover:text-primary focus:outline-none focus:ring-2 focus:ring-primary rounded-full p-1" 
+        title="Eliminar reservación"
+        aria-label="Eliminar reservación"
+      >
         <IconWrapper className="fill-current">
           <DashboardIcons.Alert />
         </IconWrapper>
@@ -152,8 +170,22 @@ const ReservationsPage = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState<FilterKey>('all');
   const [sourceFilter, setSourceFilter] = useState<SourceFilterKey>('all');
-  
-  const itemsPerPage = 10;
+
+  // Handlers
+  const handleViewReservation = useCallback((id: string) => {
+    console.log('Ver reservación:', id);
+    // Implementar lógica para ver detalles
+  }, []);
+
+  const handleDeleteReservation = useCallback((id: string) => {
+    console.log('Eliminar reservación:', id);
+    // Implementar lógica para eliminar
+  }, []);
+
+  const handleCreateReservation = useCallback(() => {
+    console.log('Crear nueva reservación');
+    // Implementar lógica para crear
+  }, []);
 
   // Memoizar los appointments filtrados
   const filteredAppointments = useMemo(() => {
@@ -180,27 +212,30 @@ const ReservationsPage = () => {
   }, [filteredAppointments]);
 
   // Paginar appointments
-  const currentAppointments = sortedAppointments.slice(
-    (currentPage - 1) * itemsPerPage,
-    currentPage * itemsPerPage
+  const currentAppointments = useMemo(() => 
+    sortedAppointments.slice(
+      (currentPage - 1) * ITEMS_PER_PAGE,
+      currentPage * ITEMS_PER_PAGE
+    ),
+    [sortedAppointments, currentPage]
   );
 
   // Opciones de los filtros
-  const statusOptions = [
+  const statusOptions = useMemo(() => [
     { value: 'all' as const, label: 'Todos los Estados' },
     ...Object.entries(STATUS_CONFIG).map(([value, { label }]) => ({
       value: value as StatusKey,
       label
     }))
-  ];
+  ], []);
 
-  const sourceOptions = [
+  const sourceOptions = useMemo(() => [
     { value: 'all' as const, label: 'Todas las Fuentes' },
     ...Object.entries(SOURCE_CONFIG).map(([value, label]) => ({
       value: value as SourceKey,
       label
     }))
-  ];
+  ], []);
 
   return (
     <>
@@ -226,6 +261,7 @@ const ReservationsPage = () => {
                 className="w-full rounded-md border border-stroke bg-transparent py-2 px-4 outline-none focus:border-primary dark:border-strokedark dark:bg-boxdark dark:focus:border-primary"
                 value={sourceFilter}
                 onChange={(e) => setSourceFilter(e.target.value as SourceFilterKey)}
+                aria-label="Filtrar por fuente"
               >
                 {sourceOptions.map(option => (
                   <option key={option.value} value={option.value}>
@@ -237,7 +273,11 @@ const ReservationsPage = () => {
           </div>
 
           <div className="flex items-center gap-4">
-            <button className="flex items-center gap-2 rounded-md bg-primary py-2 px-4.5 font-medium text-white hover:bg-opacity-80">
+            <button 
+              onClick={handleCreateReservation}
+              className="flex items-center gap-2 rounded-md bg-primary py-2 px-4.5 font-medium text-white hover:bg-opacity-80 focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2"
+              aria-label="Crear nueva reservación"
+            >
               <IconWrapper className="fill-white">
                 <DashboardIcons.Alert />
               </IconWrapper>
@@ -248,13 +288,14 @@ const ReservationsPage = () => {
 
         <div className="rounded-sm border border-stroke bg-white px-5 pb-2.5 pt-6 shadow-default dark:border-strokedark dark:bg-boxdark sm:px-7.5 xl:pb-1">
           <div className="max-w-full overflow-x-auto">
-            <table className="w-full table-auto">
+            <table className="w-full table-auto" role="grid" aria-label="Tabla de reservaciones">
               <thead>
                 <tr className="bg-gray-2 text-left dark:bg-meta-4">
                   {TABLE_HEADERS.map(header => (
                     <th 
                       key={header.key}
                       className={`${header.minWidth ? `min-w-[${header.minWidth}]` : ''} py-4 px-4 font-medium text-black dark:text-white`}
+                      scope="col"
                     >
                       {header.label}
                     </th>
@@ -278,7 +319,10 @@ const ReservationsPage = () => {
                     <StatusCell status={appointment.status.value as StatusKey} />
                     <SourceCell source={appointment.source as SourceKey} />
                     <TotalCell amount={appointment.totalPrice} />
-                    <ActionsCell />
+                    <ActionsCell 
+                      onView={() => handleViewReservation(appointment.id)}
+                      onDelete={() => handleDeleteReservation(appointment.id)}
+                    />
                   </tr>
                 ))}
               </tbody>
@@ -290,7 +334,7 @@ const ReservationsPage = () => {
           <Pagination
             currentPage={currentPage}
             totalItems={sortedAppointments.length}
-            itemsPerPage={itemsPerPage}
+            itemsPerPage={ITEMS_PER_PAGE}
             onPageChange={setCurrentPage}
           />
         </div>
