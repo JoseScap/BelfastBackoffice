@@ -1,6 +1,6 @@
-"use client";
+'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import PageBreadcrumb from '@/components/common/PageBreadCrumb';
 import { mockRooms } from '@/mock-data';
 import { RoomStatusValue } from '@/types/hotel';
@@ -13,55 +13,178 @@ import { getRoomStatusConfig } from '@/utils/statusColors';
 //   description: 'Visual room grid management for Belfast Backoffice',
 // };
 
+// Componentes
+const FloorSelect = React.memo(
+  ({
+    value,
+    floors,
+    onChange,
+  }: {
+    value: number;
+    floors: number[];
+    onChange: (floor: number) => void;
+  }) => (
+    <select
+      className="w-full rounded-md border border-stroke bg-transparent py-2 px-4 outline-none focus:border-primary dark:border-strokedark dark:bg-boxdark dark:focus:border-primary"
+      value={value}
+      onChange={e => onChange(Number(e.target.value))}
+    >
+      {floors.map(floor => (
+        <option key={floor} value={floor}>
+          Piso {floor}
+        </option>
+      ))}
+    </select>
+  )
+);
+FloorSelect.displayName = 'FloorSelect';
+
+const DateSelect = React.memo(
+  ({ value, onChange }: { value: string; onChange: (date: string) => void }) => (
+    <input
+      type="date"
+      className="w-full rounded-md border border-stroke bg-transparent py-2 px-4 outline-none focus:border-primary dark:border-strokedark dark:bg-boxdark dark:focus:border-primary"
+      value={value}
+      onChange={e => onChange(e.target.value)}
+    />
+  )
+);
+DateSelect.displayName = 'DateSelect';
+
+const StatusLegend = React.memo(() => (
+  <div className="flex flex-col gap-2">
+    <h5 className="font-medium text-black dark:text-white">Estado</h5>
+    <div className="flex flex-wrap gap-3">
+      {Object.values(RoomStatusValue).map(status => {
+        const { background } = getRoomStatusConfig(status);
+        return (
+          <div key={status} className="flex items-center gap-1.5">
+            <span className={`h-4 w-4 rounded-full ${background}`} />
+            <span className="text-sm">{status}</span>
+          </div>
+        );
+      })}
+    </div>
+  </div>
+));
+StatusLegend.displayName = 'StatusLegend';
+
+const CategoryLegend = React.memo(
+  ({
+    categories,
+    getCategoryColor,
+  }: {
+    categories: string[];
+    getCategoryColor: (name: string) => string;
+  }) => (
+    <div className="flex flex-col gap-2">
+      <h5 className="font-medium text-black dark:text-white">Categorías de Habitación</h5>
+      <div className="flex flex-wrap gap-3">
+        {categories.map(category => (
+          <div key={category} className="flex items-center gap-1.5">
+            <span
+              className="h-4 w-4 rounded-sm border border-stroke dark:border-strokedark"
+              style={{ backgroundColor: getCategoryColor(category) }}
+            />
+            <span className="text-sm">{category}</span>
+          </div>
+        ))}
+      </div>
+    </div>
+  )
+);
+CategoryLegend.displayName = 'CategoryLegend';
+
+interface RoomCardProps {
+  room: (typeof mockRooms)[0];
+  statusBackground: string;
+  categoryColor: string;
+}
+
+const RoomCard = React.memo(({ room, statusBackground, categoryColor }: RoomCardProps) => (
+  <div className="relative flex flex-col rounded-sm border border-stroke bg-white p-3 shadow-default dark:border-strokedark dark:bg-boxdark">
+    <div className={`absolute right-2 top-2 h-3 w-3 rounded-full ${statusBackground}`} />
+    <div
+      className="absolute left-0 top-0 h-1 w-full rounded-t-sm"
+      style={{ backgroundColor: categoryColor }}
+    />
+    <h5 className="mt-1 text-lg font-semibold text-black dark:text-white">{room.number}</h5>
+    <p className="text-sm text-gray-500 dark:text-gray-400">{room.category.name}</p>
+    <p className="mt-1 text-xs">
+      <span className="font-medium">Capacidad:</span> {room.capacity}
+    </p>
+    <div className="mt-2 flex items-center justify-between">
+      <span className={`rounded-full px-2 py-1 text-xs font-medium ${statusBackground} text-white`}>
+        {room.status.value}
+      </span>
+      <button
+        className="text-gray-500 hover:text-primary dark:text-gray-400 dark:hover:text-white"
+        aria-label="Ver detalles"
+      >
+        <svg
+          className="fill-current"
+          width="18"
+          height="18"
+          viewBox="0 0 18 18"
+          fill="none"
+          xmlns="http://www.w3.org/2000/svg"
+        >
+          <path
+            d="M16.4999 9C16.4999 13.14 13.1399 16.5 8.99993 16.5C4.85993 16.5 1.49993 13.14 1.49993 9C1.49993 4.86 4.85993 1.5 8.99993 1.5C13.1399 1.5 16.4999 4.86 16.4999 9Z"
+            stroke="currentColor"
+            strokeWidth="1.5"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          />
+          <path
+            d="M11.7749 11.3249L9.3249 9.89994V5.82494"
+            stroke="currentColor"
+            strokeWidth="1.5"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          />
+        </svg>
+      </button>
+    </div>
+  </div>
+));
+RoomCard.displayName = 'RoomCard';
+
 const RoomGridPage = () => {
   const [selectedFloor, setSelectedFloor] = useState<number | null>(null);
-  const [selectedDate, setSelectedDate] = useState<string>(
-    new Date().toISOString().split('T')[0]
-  );
+  const [selectedDate, setSelectedDate] = useState<string>(new Date().toISOString().split('T')[0]);
 
-  // Get unique floors from rooms
-  const floors = [...new Set(mockRooms.map((room) => room.floor))].sort((a, b) => a - b);
+  // Memoizar datos procesados
+  const { floors, roomsOnFloor, roomCategories } = useMemo(() => {
+    const uniqueFloors = [...new Set(mockRooms.map(room => room.floor))].sort((a, b) => a - b);
+    const currentFloor = selectedFloor !== null ? selectedFloor : uniqueFloors[0];
+    const filteredRooms = mockRooms.filter(room => room.floor === currentFloor);
+    const uniqueCategories = [...new Set(mockRooms.map(room => room.category.name))];
 
-  // If no floor is selected, default to the first one
-  const currentFloor = selectedFloor !== null ? selectedFloor : floors[0];
+    return {
+      floors: uniqueFloors,
+      roomsOnFloor: filteredRooms,
+      roomCategories: uniqueCategories,
+    };
+  }, [selectedFloor]);
 
-  // Filter rooms by selected floor
-  const roomsOnFloor = mockRooms.filter((room) => room.floor === currentFloor);
+  // Función para generar color consistente para categorías
+  const getCategoryColor = useMemo(() => {
+    return (categoryName: string) => {
+      let hash = 0;
+      for (let i = 0; i < categoryName.length; i++) {
+        hash = categoryName.charCodeAt(i) + ((hash << 5) - hash);
+      }
+      const c = (hash & 0x00ffffff).toString(16).toUpperCase();
+      return `#${'00000'.substring(0, 6 - c.length)}${c}`;
+    };
+  }, []);
 
-  // Group rooms by category for the legend
-  const roomCategories = [...new Set(mockRooms.map((room) => room.category.name))];
-
-  // Get status color
-  const getStatusColor = (status: RoomStatusValue): string => {
-    const { background } = getRoomStatusConfig(status);
-    return background;
-  };
-
-  // Get category color
-  const getCategoryColor = (categoryName: string) => {
-    // This is a simple hash function to generate consistent colors
-    let hash = 0;
-    for (let i = 0; i < categoryName.length; i++) {
-      hash = categoryName.charCodeAt(i) + ((hash << 5) - hash);
-    }
-    
-    // Convert to hex color
-    const c = (hash & 0x00FFFFFF)
-      .toString(16)
-      .toUpperCase();
-    
-    return `#${"00000".substring(0, 6 - c.length)}${c}`;
-  };
-
-  // Traducir estado
-  const translateStatus = (status: string) => {
-    // Los valores de RoomStatusValue ya están en español, así que simplemente devolvemos el valor
-    return status;
-  };
+  const currentFloor = selectedFloor ?? floors[0];
 
   return (
     <>
-      <PageMetadata 
+      <PageMetadata
         title="Cuadrícula de Habitaciones | Belfast Backoffice"
         description="Gestión visual de habitaciones para Belfast Backoffice"
       />
@@ -72,26 +195,10 @@ const RoomGridPage = () => {
         <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <div className="flex items-center gap-4">
             <div className="w-full sm:w-auto">
-              <select
-                className="w-full rounded-md border border-stroke bg-transparent py-2 px-4 outline-none focus:border-primary dark:border-strokedark dark:bg-boxdark dark:focus:border-primary"
-                value={currentFloor}
-                onChange={(e) => setSelectedFloor(Number(e.target.value))}
-              >
-                {floors.map((floor) => (
-                  <option key={floor} value={floor}>
-                    Piso {floor}
-                  </option>
-                ))}
-              </select>
+              <FloorSelect value={currentFloor} floors={floors} onChange={setSelectedFloor} />
             </div>
-
             <div className="w-full sm:w-auto">
-              <input
-                type="date"
-                className="w-full rounded-md border border-stroke bg-transparent py-2 px-4 outline-none focus:border-primary dark:border-strokedark dark:bg-boxdark dark:focus:border-primary"
-                value={selectedDate}
-                onChange={(e) => setSelectedDate(e.target.value)}
-              />
+              <DateSelect value={selectedDate} onChange={setSelectedDate} />
             </div>
           </div>
 
@@ -105,10 +212,7 @@ const RoomGridPage = () => {
                 fill="none"
                 xmlns="http://www.w3.org/2000/svg"
               >
-                <path
-                  d="M14.3333 7.33333V3.33333C14.3333 2.96667 14.0333 2.66667 13.6667 2.66667H10.3333C9.96667 2.66667 9.66667 2.96667 9.66667 3.33333V7.33333C9.66667 7.7 9.96667 8 10.3333 8H13.6667C14.0333 8 14.3333 7.7 14.3333 7.33333ZM14.3333 12.6667V10C14.3333 9.63333 14.0333 9.33333 13.6667 9.33333H10.3333C9.96667 9.33333 9.66667 9.63333 9.66667 10V12.6667C9.66667 13.0333 9.96667 13.3333 10.3333 13.3333H13.6667C14.0333 13.3333 14.3333 13.0333 14.3333 12.6667ZM6.33333 12.6667V8.66667C6.33333 8.3 6.03333 8 5.66667 8H2.33333C1.96667 8 1.66667 8.3 1.66667 8.66667V12.6667C1.66667 13.0333 1.96667 13.3333 2.33333 13.3333H5.66667C6.03333 13.3333 6.33333 13.0333 6.33333 12.6667ZM6.33333 3.33333V5.33333C6.33333 5.7 6.03333 6 5.66667 6H2.33333C1.96667 6 1.66667 5.7 1.66667 5.33333V3.33333C1.66667 2.96667 1.96667 2.66667 2.33333 2.66667H5.66667C6.03333 2.66667 6.33333 2.96667 6.33333 3.33333Z"
-                  fill=""
-                />
+                <path d="M14.3333 7.33333V3.33333C14.3333 2.96667 14.0333 2.66667 13.6667 2.66667H10.3333C9.96667 2.66667 9.66667 2.96667 9.66667 3.33333V7.33333C9.66667 7.7 9.96667 8 10.3333 8H13.6667C14.0333 8 14.3333 7.7 14.3333 7.33333ZM14.3333 12.6667V10C14.3333 9.63333 14.0333 9.33333 13.6667 9.33333H10.3333C9.96667 9.33333 9.66667 9.63333 9.66667 10V12.6667C9.66667 13.0333 9.96667 13.3333 10.3333 13.3333H13.6667C14.0333 13.3333 14.3333 13.0333 14.3333 12.6667ZM6.33333 12.6667V8.66667C6.33333 8.3 6.03333 8 5.66667 8H2.33333C1.96667 8 1.66667 8.3 1.66667 8.66667V12.6667C1.66667 13.0333 1.96667 13.3333 2.33333 13.3333H5.66667C6.03333 13.3333 6.33333 13.0333 6.33333 12.6667ZM6.33333 3.33333V5.33333C6.33333 5.7 6.03333 6 5.66667 6H2.33333C1.96667 6 1.66667 5.7 1.66667 5.33333V3.33333C1.66667 2.96667 1.96667 2.66667 2.33333 2.66667H5.66667C6.03333 2.66667 6.33333 2.96667 6.33333 3.33333Z" />
               </svg>
               Vista de Impresión
             </button>
@@ -119,32 +223,8 @@ const RoomGridPage = () => {
         <div className="rounded-sm border border-stroke bg-white p-4 shadow-default dark:border-strokedark dark:bg-boxdark">
           <h4 className="mb-2 text-lg font-semibold text-black dark:text-white">Leyenda</h4>
           <div className="flex flex-wrap gap-4">
-            <div className="flex flex-col gap-2">
-              <h5 className="font-medium text-black dark:text-white">Estado</h5>
-              <div className="flex flex-wrap gap-3">
-                {Object.values(RoomStatusValue).map((status) => (
-                  <div key={status} className="flex items-center gap-1.5">
-                    <span className={`h-4 w-4 rounded-full ${getStatusColor(status)}`}></span>
-                    <span className="text-sm">{translateStatus(status)}</span>
-                  </div>
-                ))}
-              </div>
-            </div>
-            
-            <div className="flex flex-col gap-2">
-              <h5 className="font-medium text-black dark:text-white">Categorías de Habitación</h5>
-              <div className="flex flex-wrap gap-3">
-                {roomCategories.map((category) => (
-                  <div key={category} className="flex items-center gap-1.5">
-                    <span 
-                      className="h-4 w-4 rounded-sm border border-stroke dark:border-strokedark" 
-                      style={{ backgroundColor: getCategoryColor(category) }}
-                    ></span>
-                    <span className="text-sm">{category}</span>
-                  </div>
-                ))}
-              </div>
-            </div>
+            <StatusLegend />
+            <CategoryLegend categories={roomCategories} getCategoryColor={getCategoryColor} />
           </div>
         </div>
 
@@ -153,69 +233,19 @@ const RoomGridPage = () => {
           <h4 className="mb-6 text-xl font-semibold text-black dark:text-white">
             Piso {currentFloor} - {selectedDate}
           </h4>
-          
+
           <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 xl:grid-cols-8">
-            {roomsOnFloor.map((room) => (
-              <div 
-                key={room.id} 
-                className="relative flex flex-col rounded-sm border border-stroke bg-white p-3 shadow-default dark:border-strokedark dark:bg-boxdark"
-              >
-                {/* Status indicator */}
-                <div 
-                  className={`absolute right-2 top-2 h-3 w-3 rounded-full ${getStatusColor(room.status.value as RoomStatusValue)}`}
-                ></div>
-                
-                {/* Category color bar */}
-                <div 
-                  className="absolute left-0 top-0 h-1 w-full rounded-t-sm"
-                  style={{ backgroundColor: getCategoryColor(room.category.name) }}
-                ></div>
-                
-                <h5 className="mt-1 text-lg font-semibold text-black dark:text-white">
-                  {room.number}
-                </h5>
-                
-                <p className="text-sm text-gray-500 dark:text-gray-400">
-                  {room.category.name}
-                </p>
-                
-                <p className="mt-1 text-xs">
-                  <span className="font-medium">Capacidad:</span> {room.capacity}
-                </p>
-                
-                <div className="mt-2 flex items-center justify-between">
-                  <span className={`rounded-full px-2 py-1 text-xs font-medium ${getStatusColor(room.status.value as RoomStatusValue)} text-white`}>
-                    {translateStatus(room.status.value)}
-                  </span>
-                  
-                  <button className="text-gray-500 hover:text-primary dark:text-gray-400 dark:hover:text-white">
-                    <svg
-                      className="fill-current"
-                      width="18"
-                      height="18"
-                      viewBox="0 0 18 18"
-                      fill="none"
-                      xmlns="http://www.w3.org/2000/svg"
-                    >
-                      <path
-                        d="M16.4999 9C16.4999 13.14 13.1399 16.5 8.99993 16.5C4.85993 16.5 1.49993 13.14 1.49993 9C1.49993 4.86 4.85993 1.5 8.99993 1.5C13.1399 1.5 16.4999 4.86 16.4999 9Z"
-                        stroke="currentColor"
-                        strokeWidth="1.5"
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                      />
-                      <path
-                        d="M11.7749 11.3249L9.3249 9.89994V5.82494"
-                        stroke="currentColor"
-                        strokeWidth="1.5"
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                      />
-                    </svg>
-                  </button>
-                </div>
-              </div>
-            ))}
+            {roomsOnFloor.map(room => {
+              const { background } = getRoomStatusConfig(room.status.value as RoomStatusValue);
+              return (
+                <RoomCard
+                  key={room.id}
+                  room={room}
+                  statusBackground={background}
+                  categoryColor={getCategoryColor(room.category.name)}
+                />
+              );
+            })}
           </div>
         </div>
       </div>
@@ -223,4 +253,4 @@ const RoomGridPage = () => {
   );
 };
 
-export default RoomGridPage; 
+export default RoomGridPage;
