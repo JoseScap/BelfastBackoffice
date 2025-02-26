@@ -1,22 +1,22 @@
 import { DashboardIcons, IconWrapper } from './icons';
 
-interface SearchFilterProps {
+interface SearchFilterProps<T extends string> {
   searchTerm: string;
   onSearchChange: (value: string) => void;
-  filterValue: string;
-  onFilterChange: (value: string) => void;
-  filterOptions: { value: string; label: string }[];
+  filterValue: T;
+  onFilterChange: (value: T) => void;
+  filterOptions: { value: T; label: string }[];
   totalResults?: number;
 }
 
-const SearchFilter = ({ 
+const SearchFilter = <T extends string>({ 
   searchTerm, 
   onSearchChange, 
   filterValue, 
   onFilterChange, 
   filterOptions,
   totalResults 
-}: SearchFilterProps) => {
+}: SearchFilterProps<T>) => {
   return (
     <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
       <div className="flex items-center gap-4">
@@ -39,7 +39,7 @@ const SearchFilter = ({
           <select
             className="w-full rounded-md border border-stroke bg-transparent py-2 px-4 outline-none focus:border-primary dark:border-strokedark dark:bg-boxdark dark:focus:border-primary"
             value={filterValue}
-            onChange={(e) => onFilterChange(e.target.value)}
+            onChange={(e) => onFilterChange(e.target.value as T)}
           >
             {filterOptions.map(option => (
               <option key={option.value} value={option.value}>
