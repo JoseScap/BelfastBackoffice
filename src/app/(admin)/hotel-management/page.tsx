@@ -2,11 +2,12 @@
 
 import React, { useMemo } from 'react';
 import PageBreadcrumb from '@/components/common/PageBreadCrumb';
-import Link from 'next/link';
 import { mockAppointments, mockRooms } from '@/mock-data';
 import { AppointmentStatusValue, RoomStatusValue } from '@/types/hotel';
 import PageMetadata from '@/components/common/PageMetadata';
-import { FaSignInAlt, FaSignOutAlt, FaCalendarCheck, FaBed } from 'react-icons/fa';
+import StatCard from '@/components/common/StatCard';
+import QuickLinkCard from '@/components/common/QuickLinkCard';
+import { DashboardIcons, IconWrapper } from '@/components/common/icons';
 
 const HotelManagementDashboard = () => {
   // Funciones de utilidad para fechas
@@ -17,7 +18,6 @@ const HotelManagementDashboard = () => {
 
   // Memoizar los conteos de appointments para evitar recálculos innecesarios
   const appointmentCounts = useMemo(() => {
-    
     return {
       checkIns: mockAppointments.filter(
         appointment => 
@@ -66,22 +66,22 @@ const HotelManagementDashboard = () => {
     {
       title: 'Check-ins de Hoy',
       value: appointmentCounts.checkIns,
-      icon: <FaSignInAlt className="w-6 h-6 fill-primary dark:fill-white" />
+      icon: <IconWrapper className="fill-primary dark:fill-white"><DashboardIcons.CheckIn /></IconWrapper>
     },
     {
       title: 'Check-outs de Hoy',
       value: appointmentCounts.checkOuts,
-      icon: <FaSignOutAlt className="w-6 h-6 fill-primary dark:fill-white" />
+      icon: <IconWrapper className="fill-primary dark:fill-white"><DashboardIcons.CheckOut /></IconWrapper>
     },
     {
       title: 'Reservas Pendientes',
       value: appointmentCounts.pending,
-      icon: <FaCalendarCheck className="w-6 h-6 fill-primary dark:fill-white" />
+      icon: <IconWrapper className="fill-primary dark:fill-white"><DashboardIcons.Calendar /></IconWrapper>
     },
     {
       title: 'Habitaciones Disponibles',
       value: roomCounts.available,
-      icon: <FaBed className="w-6 h-6 fill-primary dark:fill-white" />
+      icon: <IconWrapper className="fill-primary dark:fill-white"><DashboardIcons.Bed /></IconWrapper>
     }
   ];
 
@@ -91,34 +91,38 @@ const HotelManagementDashboard = () => {
       title: 'Gestión de Habitaciones',
       description: 'Administrar habitaciones y categorías',
       path: '/hotel-management/rooms',
+      icon: <IconWrapper className="fill-primary dark:fill-white mx-auto"><DashboardIcons.Hotel /></IconWrapper>,
       showRoomStats: true
     },
     {
       title: 'Reservas',
       description: 'Gestionar reservas y check-ins',
       path: '/hotel-management/reservations',
+      icon: <IconWrapper className="fill-primary dark:fill-white mx-auto"><DashboardIcons.Reservations /></IconWrapper>,
       showRoomStats: false
     },
     {
       title: 'Cuadrícula de Habitaciones',
       description: 'Ver calendario de disponibilidad',
       path: '/hotel-management/room-grid',
+      icon: <IconWrapper className="fill-primary dark:fill-white mx-auto"><DashboardIcons.List /></IconWrapper>,
       showRoomStats: false
     },
     {
       title: 'Solicitudes Pendientes',
       description: 'Gestionar solicitudes de reserva pendientes',
       path: '/hotel-management/pending',
+      icon: <IconWrapper className="fill-primary dark:fill-white mx-auto"><DashboardIcons.Pending /></IconWrapper>,
       showRoomStats: false
     }
   ];
 
   // Definir los estados de habitaciones para mostrar en las estadísticas
   const roomStats = [
-    { status: RoomStatusValue.AVAILABLE, count: roomCounts.available, label: 'Disponible' },
-    { status: RoomStatusValue.CLEANING, count: roomCounts.cleaning, label: 'Limpieza' },
-    { status: RoomStatusValue.MAINTENANCE, count: roomCounts.maintenance, label: 'Mantenimiento' },
-    { status: RoomStatusValue.UNAVAILABLE, count: roomCounts.unavailable, label: 'No Disponible' }
+    { status: RoomStatusValue.AVAILABLE, count: roomCounts.available, label: 'Disponible', color: statusColorMap[RoomStatusValue.AVAILABLE] },
+    { status: RoomStatusValue.CLEANING, count: roomCounts.cleaning, label: 'Limpieza', color: statusColorMap[RoomStatusValue.CLEANING] },
+    { status: RoomStatusValue.MAINTENANCE, count: roomCounts.maintenance, label: 'Mantenimiento', color: statusColorMap[RoomStatusValue.MAINTENANCE] },
+    { status: RoomStatusValue.UNAVAILABLE, count: roomCounts.unavailable, label: 'No Disponible', color: statusColorMap[RoomStatusValue.UNAVAILABLE] }
   ];
 
   return (
@@ -132,45 +136,18 @@ const HotelManagementDashboard = () => {
       {/* Tarjetas de estadísticas */}
       <div className="grid grid-cols-1 gap-4 md:grid-cols-2 md:gap-6 xl:grid-cols-4 2xl:gap-7.5">
         {statCards.map((card, index) => (
-          <div key={index} className="rounded-sm border border-stroke bg-white px-7.5 py-6 shadow-default dark:border-strokedark dark:bg-boxdark">
-            <div className="flex h-11.5 w-11.5 items-center justify-center rounded-full bg-meta-2 dark:bg-meta-4">
-              {card.icon}
-            </div>
-
-            <div className="mt-4 flex items-end justify-between">
-              <div>
-                <h4 className="text-title-md font-bold text-black dark:text-white">
-                  {card.value}
-                </h4>
-                <span className="text-sm font-medium">{card.title}</span>
-              </div>
-            </div>
-          </div>
+          <StatCard key={index} {...card} />
         ))}
       </div>
 
       {/* Enlaces rápidos */}
       <div className="mt-4 grid grid-cols-1 gap-4 md:grid-cols-2 md:gap-6 xl:grid-cols-4 2xl:gap-7.5">
         {quickLinks.map((link, index) => (
-          <Link key={index} href={link.path}>
-            <div className="rounded-sm h-full border border-stroke bg-white p-4 text-center shadow-default dark:border-strokedark dark:bg-boxdark hover:bg-gray-50 dark:hover:bg-gray-800 cursor-pointer">
-              <h3 className="text-title-md font-bold text-black dark:text-white">
-                {link.title}
-              </h3>
-              <p className="mt-1 text-sm">{link.description}</p>
-              
-              {link.showRoomStats && (
-                <div className="mt-3 flex flex-wrap px-10 justify-center gap-2">
-                  {roomStats.map((stat, statIndex) => (
-                    <div key={statIndex} className="flex items-center gap-1">
-                      <span className={`h-3 w-3 rounded-full ${statusColorMap[stat.status]}`}></span>
-                      <span className="text-xs">{stat.count} {stat.label}</span>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </div>
-          </Link>
+          <QuickLinkCard 
+            key={index} 
+            {...link} 
+            roomStats={link.showRoomStats ? roomStats : []} 
+          />
         ))}
       </div>
     </>
