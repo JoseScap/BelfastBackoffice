@@ -1,291 +1,292 @@
 "use client";
 
-import React, { useState } from 'react';
-import PageBreadcrumb from '@/components/common/PageBreadCrumb';
-import { mockRooms } from '@/mock-data';
-import {  RoomStatusValue } from '@/types/hotel';
-import Pagination from '@/components/tables/Pagination';
-import PageMetadata from '@/components/common/PageMetadata';
+import React, { useState, useMemo, useCallback } from 'react';
 
-// Movemos la metadata a un archivo separado
-// export const metadata: Metadata = {
-//   title: 'Room Management | Belfast Backoffice',
-//   description: 'Room management for Belfast Backoffice',
-// };
+// Componentes
+import PageBreadcrumb from '@/components/common/PageBreadCrumb';
+import PageMetadata from '@/components/common/PageMetadata';
+import SearchFilter from '@/components/common/SearchFilter';
+import Pagination from '@/components/tables/Pagination';
+import { DashboardIcons, IconWrapper } from '@/components/common/icons';
+
+// Datos y tipos
+import { mockRooms } from '@/mock-data';
+import { RoomStatusValue } from '@/types/hotel';
+
+interface StatusConfig {
+  label: string;
+  color: string;
+  icon: React.ReactNode;
+}
+
+type StatusKey = RoomStatusValue;
+type FilterKey = 'all' | StatusKey;
+
+const ITEMS_PER_PAGE = 10;
+
+const STATUS_CONFIG: Record<StatusKey, StatusConfig> = {
+  [RoomStatusValue.AVAILABLE]: {
+    label: 'Disponible',
+    color: 'bg-success-500 text-white',
+    icon: <DashboardIcons.Bed />
+  },
+  [RoomStatusValue.UNAVAILABLE]: {
+    label: 'No Disponible',
+    color: 'bg-red-500 text-white',
+    icon: <DashboardIcons.Alert />
+  },
+  [RoomStatusValue.CLEANING]: {
+    label: 'Limpieza',
+    color: 'bg-orange-500 text-white',
+    icon: <DashboardIcons.List />
+  },
+  [RoomStatusValue.MAINTENANCE]: {
+    label: 'Mantenimiento',
+    color: 'bg-blue-500 text-white',
+    icon: <DashboardIcons.Hotel />
+  }
+} as const;
+
+const TABLE_HEADERS = [
+  { key: 'number', label: 'Número', minWidth: '100px' },
+  { key: 'category', label: 'Categoría', minWidth: '150px' },
+  { key: 'floor', label: 'Piso', minWidth: '100px' },
+  { key: 'capacity', label: 'Capacidad', minWidth: '120px' },
+  { key: 'price', label: 'Precio/Noche', minWidth: '120px' },
+  { key: 'status', label: 'Estado', minWidth: '120px' },
+  { key: 'actions', label: 'Acciones', minWidth: 'auto' }
+] as const;
+
+// Componentes de tabla memoizados
+const TableCell = React.memo(({ className, children }: { className?: string; children: React.ReactNode }) => (
+  <td className={`border-b border-[#eee] py-5 px-4 dark:border-strokedark ${className || ''}`}>
+    {children}
+  </td>
+));
+TableCell.displayName = 'TableCell';
+
+const NumberCell = React.memo(({ number }: { number: number }) => (
+  <TableCell>
+    <h5 className="font-medium text-black dark:text-white">
+      #{number}
+    </h5>
+  </TableCell>
+));
+NumberCell.displayName = 'NumberCell';
+
+const CategoryCell = React.memo(({ name, description }: { name: string; description: string }) => (
+  <TableCell>
+    <h5 className="font-medium text-black dark:text-white">
+      {name}
+    </h5>
+    <p className="text-sm">{description}</p>
+  </TableCell>
+));
+CategoryCell.displayName = 'CategoryCell';
+
+const FloorCell = React.memo(({ floor }: { floor: number }) => (
+  <TableCell>
+    <p className="text-black dark:text-white">
+      {floor}º Piso
+    </p>
+  </TableCell>
+));
+FloorCell.displayName = 'FloorCell';
+
+const CapacityCell = React.memo(({ capacity }: { capacity: number }) => (
+  <TableCell>
+    <p className="text-black dark:text-white">
+      {capacity} {capacity === 1 ? 'persona' : 'personas'}
+    </p>
+  </TableCell>
+));
+CapacityCell.displayName = 'CapacityCell';
+
+const PriceCell = React.memo(({ price }: { price: number }) => (
+  <TableCell>
+    <p className="text-black dark:text-white">
+      ${price.toFixed(2)}
+    </p>
+  </TableCell>
+));
+PriceCell.displayName = 'PriceCell';
+
+const StatusCell = React.memo(({ status }: { status: StatusKey }) => (
+  <TableCell>
+    <div className="flex items-center gap-2">
+      <span className={`inline-flex rounded-full py-1 px-3 text-sm font-medium ${STATUS_CONFIG[status].color}`}>
+        {STATUS_CONFIG[status].label}
+      </span>
+      <IconWrapper className="fill-current">
+        {STATUS_CONFIG[status].icon}
+      </IconWrapper>
+    </div>
+  </TableCell>
+));
+StatusCell.displayName = 'StatusCell';
+
+interface ActionsCellProps {
+  onView: () => void;
+  onEdit: () => void;
+  onDelete: () => void;
+}
+
+const ActionsCell = React.memo(({ onView, onEdit, onDelete }: ActionsCellProps) => (
+  <TableCell>
+    <div className="flex items-center space-x-3.5">
+      <button 
+        onClick={onView}
+        className="hover:text-primary focus:outline-none focus:ring-2 focus:ring-primary rounded-full p-1" 
+        title="Ver detalles"
+        aria-label="Ver detalles de la habitación"
+      >
+        <IconWrapper className="fill-current">
+          <DashboardIcons.Search />
+        </IconWrapper>
+      </button>
+      <button 
+        onClick={onEdit}
+        className="hover:text-primary focus:outline-none focus:ring-2 focus:ring-primary rounded-full p-1" 
+        title="Editar habitación"
+        aria-label="Editar habitación"
+      >
+        <IconWrapper className="fill-current">
+          <DashboardIcons.List />
+        </IconWrapper>
+      </button>
+      <button 
+        onClick={onDelete}
+        className="hover:text-primary focus:outline-none focus:ring-2 focus:ring-primary rounded-full p-1" 
+        title="Eliminar habitación"
+        aria-label="Eliminar habitación"
+      >
+        <IconWrapper className="fill-current">
+          <DashboardIcons.Alert />
+        </IconWrapper>
+      </button>
+    </div>
+  </TableCell>
+));
+ActionsCell.displayName = 'ActionsCell';
 
 const RoomsPage = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const [searchTerm, setSearchTerm] = useState('');
-  const [statusFilter, setStatusFilter] = useState<string>('all');
-  const [categoryFilter, setCategoryFilter] = useState<string>('all');
-  
-  const itemsPerPage = 10;
+  const [statusFilter, setStatusFilter] = useState<FilterKey>('all');
 
-  // Get unique categories for filter
-  const categories = Array.from(new Set(mockRooms.map(room => room.category.name)));
-  
-  // Filter rooms based on search term and filters
-  const filteredRooms = mockRooms.filter(room => {
-    const matchesSearch = 
-      room.number.toString().includes(searchTerm) ||
-      room.category.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      room.status.value.toLowerCase().includes(searchTerm.toLowerCase());
-    
-    const matchesStatus = statusFilter === 'all' || room.status.value === statusFilter;
-    const matchesCategory = categoryFilter === 'all' || room.category.name === categoryFilter;
-    
-    return matchesSearch && matchesStatus && matchesCategory;
-  });
+  const handleViewRoom = useCallback((id: string) => {
+    console.log('Ver habitación:', id);
+  }, []);
 
-  // Paginate rooms
-  const indexOfLastItem = currentPage * itemsPerPage;
-  const indexOfFirstItem = indexOfLastItem - itemsPerPage;
-  const currentRooms = filteredRooms.slice(indexOfFirstItem, indexOfLastItem);
-  
-  // Get status badge color
-  const getStatusColor = (status: RoomStatusValue) => {
-    switch (status) {
-      case RoomStatusValue.AVAILABLE:
-        return 'bg-success-500 text-white';
-      case RoomStatusValue.CLEANING:
-        return 'bg-orange-500 text-white';
-      case RoomStatusValue.UNAVAILABLE:
-        return 'bg-red-500 text-white';
-      case RoomStatusValue.MAINTENANCE:
-        return 'bg-blue-500 text-white';
-      default:
-        return 'bg-gray-500 text-white';
-    }
-  };
+  const handleEditRoom = useCallback((id: string) => {
+    console.log('Editar habitación:', id);
+  }, []);
+
+  const handleDeleteRoom = useCallback((id: string) => {
+    console.log('Eliminar habitación:', id);
+  }, []);
+
+  const handleCreateRoom = useCallback(() => {
+    console.log('Crear nueva habitación');
+  }, []);
+
+  const filteredRooms = useMemo(() => {
+    const searchLower = searchTerm.toLowerCase();
+    return mockRooms.filter(room => {
+      const matchesSearch = 
+        room.number.toString().includes(searchTerm) ||
+        room.category.name.toLowerCase().includes(searchLower) ||
+        room.category.description.toLowerCase().includes(searchLower);
+      
+      const matchesStatus = statusFilter === 'all' || room.status.value === statusFilter;
+      
+      return matchesSearch && matchesStatus;
+    });
+  }, [searchTerm, statusFilter]);
+
+  const sortedRooms = useMemo(() => (
+    [...filteredRooms].sort((a, b) => a.number - b.number)
+  ), [filteredRooms]);
+
+  const currentRooms = useMemo(() => (
+    sortedRooms.slice(
+      (currentPage - 1) * ITEMS_PER_PAGE,
+      currentPage * ITEMS_PER_PAGE
+    )
+  ), [sortedRooms, currentPage]);
+
+  const statusOptions = useMemo(() => [
+    { value: 'all' as const, label: 'Todos los Estados' },
+    ...Object.entries(STATUS_CONFIG).map(([value, { label }]) => ({
+      value: value as StatusKey,
+      label
+    }))
+  ], []);
 
   return (
     <>
       <PageMetadata 
-        title="Gestión de Habitaciones | Belfast Backoffice"
-        description="Administración de habitaciones para Belfast Backoffice"
+        title="Habitaciones | Belfast Backoffice"
+        description="Gestión de habitaciones para Belfast Backoffice"
       />
-      <PageBreadcrumb pageTitle="Gestión de Habitaciones" />
+      <PageBreadcrumb pageTitle="Habitaciones" />
 
       <div className="flex flex-col gap-5 md:gap-7 2xl:gap-10">
-        {/* Header Actions */}
         <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-          <div className="flex items-center gap-4">
-            <div className="relative">
-              <input
-                type="text"
-                placeholder="Buscar habitaciones..."
-                className="w-full rounded-md border border-stroke bg-transparent py-2 pl-10 pr-4 outline-none focus:border-primary dark:border-strokedark dark:bg-boxdark dark:focus:border-primary"
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-              />
-              <span className="absolute left-3 top-2.5">
-                <svg
-                  className="fill-gray-500 dark:fill-gray-400"
-                  width="18"
-                  height="18"
-                  viewBox="0 0 18 18"
-                  fill="none"
-                  xmlns="http://www.w3.org/2000/svg"
-                >
-                  <path
-                    fillRule="evenodd"
-                    clipRule="evenodd"
-                    d="M8.25 3C5.3505 3 3 5.3505 3 8.25C3 11.1495 5.3505 13.5 8.25 13.5C11.1495 13.5 13.5 11.1495 13.5 8.25C13.5 5.3505 11.1495 3 8.25 3ZM1.5 8.25C1.5 4.52208 4.52208 1.5 8.25 1.5C11.9779 1.5 15 4.52208 15 8.25C15 11.9779 11.9779 15 8.25 15C4.52208 15 1.5 11.9779 1.5 8.25Z"
-                    fill=""
-                  />
-                  <path
-                    fillRule="evenodd"
-                    clipRule="evenodd"
-                    d="M11.9572 11.9572C12.2501 11.6643 12.7249 11.6643 13.0178 11.9572L16.2803 15.2197C16.5732 15.5126 16.5732 15.9874 16.2803 16.2803C15.9874 16.5732 15.5126 16.5732 15.2197 16.2803L11.9572 13.0178C11.6643 12.7249 11.6643 12.2501 11.9572 11.9572Z"
-                    fill=""
-                  />
-                </svg>
-              </span>
-            </div>
+          <SearchFilter<FilterKey>
+            searchTerm={searchTerm}
+            onSearchChange={setSearchTerm}
+            filterValue={statusFilter}
+            onFilterChange={setStatusFilter}
+            filterOptions={statusOptions}
+            totalResults={filteredRooms.length}
+          />
 
-            <div className="w-full sm:w-auto">
-              <select
-                className="w-full rounded-md border border-stroke bg-transparent py-2 px-4 outline-none focus:border-primary dark:border-strokedark dark:bg-boxdark dark:focus:border-primary"
-                value={statusFilter}
-                onChange={(e) => setStatusFilter(e.target.value)}
-              >
-                <option value="all">Todos los Estados</option>
-                <option value={RoomStatusValue.AVAILABLE}>{RoomStatusValue.AVAILABLE}</option>
-                <option value={RoomStatusValue.CLEANING}>{RoomStatusValue.CLEANING}</option>
-                <option value={RoomStatusValue.UNAVAILABLE}>{RoomStatusValue.UNAVAILABLE}</option>
-                <option value={RoomStatusValue.MAINTENANCE}>{RoomStatusValue.MAINTENANCE}</option>
-              </select>
-            </div>
-
-            <div className="w-full sm:w-auto">
-              <select
-                className="w-full rounded-md border border-stroke bg-transparent py-2 px-4 outline-none focus:border-primary dark:border-strokedark dark:bg-boxdark dark:focus:border-primary"
-                value={categoryFilter}
-                onChange={(e) => setCategoryFilter(e.target.value)}
-              >
-                <option value="all">Todas las Categorías</option>
-                {categories.map((category) => (
-                  <option key={category} value={category}>
-                    {category}
-                  </option>
-                ))}
-              </select>
-            </div>
-          </div>
-
-          <div className="flex items-center gap-4">
-            <button className="flex items-center gap-2 rounded-md bg-primary py-2 px-4.5 font-medium text-white hover:bg-opacity-80">
-              <svg
-                className="fill-white"
-                width="16"
-                height="16"
-                viewBox="0 0 16 16"
-                fill="none"
-                xmlns="http://www.w3.org/2000/svg"
-              >
-                <path
-                  d="M15 7H9V1C9 0.4 8.6 0 8 0C7.4 0 7 0.4 7 1V7H1C0.4 7 0 7.4 0 8C0 8.6 0.4 9 1 9H7V15C7 15.6 7.4 16 8 16C8.6 16 9 15.6 9 15V9H15C15.6 9 16 8.6 16 8C16 7.4 15.6 7 15 7Z"
-                  fill=""
-                />
-              </svg>
-              Añadir Habitación
-            </button>
-          </div>
+          <button 
+            onClick={handleCreateRoom}
+            className="flex items-center gap-2 rounded-md bg-primary py-2 px-4.5 font-medium text-white hover:bg-opacity-80 focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2"
+            aria-label="Crear nueva habitación"
+          >
+            <IconWrapper className="fill-white">
+              <DashboardIcons.Hotel />
+            </IconWrapper>
+            Nueva Habitación
+          </button>
         </div>
 
-        {/* Rooms Table */}
         <div className="rounded-sm border border-stroke bg-white px-5 pb-2.5 pt-6 shadow-default dark:border-strokedark dark:bg-boxdark sm:px-7.5 xl:pb-1">
           <div className="max-w-full overflow-x-auto">
-            <table className="w-full table-auto">
+            <table className="w-full table-auto" role="grid" aria-label="Tabla de habitaciones">
               <thead>
                 <tr className="bg-gray-2 text-left dark:bg-meta-4">
-                  <th className="min-w-[100px] py-4 px-4 font-medium text-black dark:text-white">
-                    Número
-                  </th>
-                  <th className="min-w-[100px] py-4 px-4 font-medium text-black dark:text-white">
-                    Piso
-                  </th>
-                  <th className="min-w-[150px] py-4 px-4 font-medium text-black dark:text-white">
-                    Categoría
-                  </th>
-                  <th className="min-w-[100px] py-4 px-4 font-medium text-black dark:text-white">
-                    Capacidad
-                  </th>
-                  <th className="min-w-[120px] py-4 px-4 font-medium text-black dark:text-white">
-                    Estado
-                  </th>
-                  <th className="min-w-[100px] py-4 px-4 font-medium text-black dark:text-white">
-                    Precio
-                  </th>
-                  <th className="py-4 px-4 font-medium text-black dark:text-white">
-                    Acciones
-                  </th>
+                  {TABLE_HEADERS.map(header => (
+                    <th 
+                      key={header.key}
+                      className={`${header.minWidth ? `min-w-[${header.minWidth}]` : ''} py-4 px-4 font-medium text-black dark:text-white`}
+                      scope="col"
+                    >
+                      {header.label}
+                    </th>
+                  ))}
                 </tr>
               </thead>
               <tbody>
                 {currentRooms.map((room) => (
                   <tr key={room.id}>
-                    <td className="border-b border-[#eee] py-5 px-4 dark:border-strokedark">
-                      <h5 className="font-medium text-black dark:text-white">
-                        {room.number}
-                      </h5>
-                    </td>
-                    <td className="border-b border-[#eee] py-5 px-4 dark:border-strokedark">
-                      <p className="text-black dark:text-white">{room.floor}</p>
-                    </td>
-                    <td className="border-b border-[#eee] py-5 px-4 dark:border-strokedark">
-                      <p className="text-black dark:text-white">
-                        {room.category.name}
-                      </p>
-                    </td>
-                    <td className="border-b border-[#eee] py-5 px-4 dark:border-strokedark">
-                      <p className="text-black dark:text-white">
-                        {room.capacity} {room.capacity > 1 ? 'personas' : 'persona'}
-                      </p>
-                    </td>
-                    <td className="border-b border-[#eee] py-5 px-4 dark:border-strokedark">
-                      <p
-                        className={`inline-flex rounded-full py-1 px-3 text-sm font-medium ${getStatusColor(
-                          room.status.value as RoomStatusValue
-                        )}`}
-                      >
-                        {room.status.value}
-                      </p>
-                    </td>
-                    <td className="border-b border-[#eee] py-5 px-4 dark:border-strokedark">
-                      <p className="text-black dark:text-white">
-                        ${room.category.price}
-                      </p>
-                    </td>
-                    <td className="border-b border-[#eee] py-5 px-4 dark:border-strokedark">
-                      <div className="flex items-center space-x-3.5">
-                        <button className="hover:text-primary">
-                          <svg
-                            className="fill-current"
-                            width="18"
-                            height="18"
-                            viewBox="0 0 18 18"
-                            fill="none"
-                            xmlns="http://www.w3.org/2000/svg"
-                          >
-                            <path
-                              d="M8.99981 14.8219C3.43106 14.8219 0.674805 9.50624 0.562305 9.28124C0.47793 9.11249 0.47793 8.88749 0.562305 8.71874C0.674805 8.49374 3.43106 3.20624 8.99981 3.20624C14.5686 3.20624 17.3248 8.49374 17.4373 8.71874C17.5217 8.88749 17.5217 9.11249 17.4373 9.28124C17.3248 9.50624 14.5686 14.8219 8.99981 14.8219ZM1.85605 8.99999C2.4748 10.0406 4.89356 13.5562 8.99981 13.5562C13.1061 13.5562 15.5248 10.0406 16.1436 8.99999C15.5248 7.95936 13.1061 4.44374 8.99981 4.44374C4.89356 4.44374 2.4748 7.95936 1.85605 8.99999Z"
-                              fill=""
-                            />
-                            <path
-                              d="M9 11.3906C7.67812 11.3906 6.60938 10.3219 6.60938 9C6.60938 7.67813 7.67812 6.60938 9 6.60938C10.3219 6.60938 11.3906 7.67813 11.3906 9C11.3906 10.3219 10.3219 11.3906 9 11.3906ZM9 7.875C8.38125 7.875 7.875 8.38125 7.875 9C7.875 9.61875 8.38125 10.125 9 10.125C9.61875 10.125 10.125 9.61875 10.125 9C10.125 8.38125 9.61875 7.875 9 7.875Z"
-                              fill=""
-                            />
-                          </svg>
-                        </button>
-                        <button className="hover:text-primary">
-                          <svg
-                            className="fill-current"
-                            width="18"
-                            height="18"
-                            viewBox="0 0 18 18"
-                            fill="none"
-                            xmlns="http://www.w3.org/2000/svg"
-                          >
-                            <path
-                              d="M13.7535 2.47502H11.5879V1.9969C11.5879 1.15315 10.9129 0.478149 10.0691 0.478149H7.90352C7.05977 0.478149 6.38477 1.15315 6.38477 1.9969V2.47502H4.21914C3.40352 2.47502 2.72852 3.15002 2.72852 3.96565V4.8094C2.72852 5.42815 3.09414 5.9344 3.62852 6.1594L4.07852 15.4688C4.13477 16.6219 5.09102 17.5219 6.24414 17.5219H11.7004C12.8535 17.5219 13.8098 16.6219 13.866 15.4688L14.3441 6.13127C14.8785 5.90627 15.2441 5.3719 15.2441 4.78127V3.93752C15.2441 3.15002 14.5691 2.47502 13.7535 2.47502ZM7.67852 1.9969C7.67852 1.85627 7.79102 1.74377 7.93164 1.74377H10.0973C10.2379 1.74377 10.3504 1.85627 10.3504 1.9969V2.47502H7.70664V1.9969H7.67852ZM4.02227 3.96565C4.02227 3.85315 4.10664 3.74065 4.24727 3.74065H13.7535C13.866 3.74065 13.9785 3.82502 13.9785 3.96565V4.8094C13.9785 4.9219 13.8941 5.0344 13.7535 5.0344H4.24727C4.13477 5.0344 4.02227 4.95002 4.02227 4.8094V3.96565ZM11.7285 16.2563H6.27227C5.79414 16.2563 5.40039 15.8906 5.37227 15.3844L4.95039 6.2719H13.0785L12.6566 15.3844C12.6004 15.8625 12.2066 16.2563 11.7285 16.2563Z"
-                              fill=""
-                            />
-                            <path
-                              d="M9.00039 9.11255C8.66289 9.11255 8.35352 9.3938 8.35352 9.75942V13.3313C8.35352 13.6688 8.63477 13.9782 9.00039 13.9782C9.33789 13.9782 9.64727 13.6969 9.64727 13.3313V9.75942C9.64727 9.3938 9.33789 9.11255 9.00039 9.11255Z"
-                              fill=""
-                            />
-                            <path
-                              d="M11.2502 9.67504C10.8846 9.64692 10.6033 9.90004 10.5752 10.2657L10.4064 12.7407C10.3783 13.0782 10.6314 13.3875 10.9971 13.4157C11.0252 13.4157 11.0252 13.4157 11.0533 13.4157C11.3908 13.4157 11.6721 13.1625 11.6721 12.825L11.8408 10.35C11.8408 9.98442 11.5877 9.70317 11.2502 9.67504Z"
-                              fill=""
-                            />
-                            <path
-                              d="M6.72245 9.67504C6.38495 9.70317 6.1037 10.0125 6.13182 10.35L6.3287 12.825C6.35683 13.1625 6.63808 13.4157 6.94745 13.4157C6.97558 13.4157 6.97558 13.4157 7.0037 13.4157C7.3412 13.3875 7.62245 13.0782 7.59433 12.7407L7.39745 10.2657C7.39745 9.90004 7.08808 9.64692 6.72245 9.67504Z"
-                              fill=""
-                            />
-                          </svg>
-                        </button>
-                        <button className="hover:text-primary">
-                          <svg
-                            className="fill-current"
-                            width="18"
-                            height="18"
-                            viewBox="0 0 18 18"
-                            fill="none"
-                            xmlns="http://www.w3.org/2000/svg"
-                          >
-                            <path
-                              d="M16.8754 11.6719C16.5379 11.6719 16.2285 11.9531 16.2285 12.3187V14.8219C16.2285 15.075 16.0316 15.2719 15.7785 15.2719H2.22227C1.96914 15.2719 1.77227 15.075 1.77227 14.8219V12.3187C1.77227 11.9812 1.49102 11.6719 1.12539 11.6719C0.759766 11.6719 0.478516 11.9531 0.478516 12.3187V14.8219C0.478516 15.7781 1.23789 16.5375 2.19414 16.5375H15.7785C16.7348 16.5375 17.4941 15.7781 17.4941 14.8219V12.3187C17.5223 11.9531 17.2129 11.6719 16.8754 11.6719Z"
-                              fill=""
-                            />
-                            <path
-                              d="M8.55074 12.3469C8.66324 12.4594 8.83199 12.5156 9.00074 12.5156C9.16949 12.5156 9.31012 12.4594 9.45074 12.3469L13.4726 8.43752C13.7257 8.1844 13.7257 7.79065 13.5007 7.53752C13.2476 7.2844 12.8539 7.2844 12.6007 7.5094L9.64762 10.4063V2.1094C9.64762 1.7719 9.36637 1.46252 9.00074 1.46252C8.66324 1.46252 8.35387 1.74377 8.35387 2.1094V10.4063L5.40074 7.53752C5.14762 7.2844 4.75387 7.31252 4.50074 7.53752C4.24762 7.79065 4.27574 8.1844 4.50074 8.43752L8.55074 12.3469Z"
-                              fill=""
-                            />
-                          </svg>
-                        </button>
-                      </div>
-                    </td>
+                    <NumberCell number={room.number} />
+                    <CategoryCell 
+                      name={room.category.name}
+                      description={room.category.description}
+                    />
+                    <FloorCell floor={room.floor} />
+                    <CapacityCell capacity={room.capacity} />
+                    <PriceCell price={room.category.price} />
+                    <StatusCell status={room.status.value as StatusKey} />
+                    <ActionsCell 
+                      onView={() => handleViewRoom(room.id)}
+                      onEdit={() => handleEditRoom(room.id)}
+                      onDelete={() => handleDeleteRoom(room.id)}
+                    />
                   </tr>
                 ))}
               </tbody>
@@ -293,12 +294,11 @@ const RoomsPage = () => {
           </div>
         </div>
 
-        {/* Pagination */}
-        <div className="flex justify-end">
+        <div className="flex items-center justify-between">
           <Pagination
             currentPage={currentPage}
-            totalItems={filteredRooms.length}
-            itemsPerPage={itemsPerPage}
+            totalItems={sortedRooms.length}
+            itemsPerPage={ITEMS_PER_PAGE}
             onPageChange={setCurrentPage}
           />
         </div>
