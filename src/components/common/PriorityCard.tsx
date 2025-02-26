@@ -1,5 +1,3 @@
-import { DashboardIcons, IconWrapper } from './icons';
-
 interface PriorityCardProps {
   title: string;
   count: number;
@@ -7,16 +5,16 @@ interface PriorityCardProps {
 }
 
 const PriorityCard = ({ title, count, priority }: PriorityCardProps) => {
-  const getIconColor = (priority: string) => {
+  const getBackgroundColor = (priority: string) => {
     switch (priority) {
       case 'high':
-        return 'fill-danger';
+        return 'bg-red-500';
       case 'medium':
-        return 'fill-warning';
+        return 'bg-orange-500';
       case 'low':
-        return 'fill-success';
+        return 'bg-success-500';
       default:
-        return 'fill-gray-500';
+        return 'bg-gray-500';
     }
   };
 
@@ -29,11 +27,7 @@ const PriorityCard = ({ title, count, priority }: PriorityCardProps) => {
             {count}
           </h4>
         </div>
-        <div className="flex h-11.5 w-11.5 items-center justify-center rounded-full bg-meta-2 dark:bg-meta-4">
-          <IconWrapper className={getIconColor(priority)}>
-            <DashboardIcons.Alert />
-          </IconWrapper>
-        </div>
+        <div className={`h-2 w-2 rounded-full ${getBackgroundColor(priority)}`} />
       </div>
     </div>
   );

@@ -12,11 +12,10 @@ import { DashboardIcons, IconWrapper } from '@/components/common/icons';
 // Datos y tipos
 import { mockRooms } from '@/mock-data';
 import { RoomStatusValue } from '@/types/hotel';
+import { getRoomStatusConfig } from '@/utils/statusColors';
 
 interface StatusConfig {
   label: string;
-  color: string;
-  icon: React.ReactNode;
 }
 
 type StatusKey = RoomStatusValue;
@@ -27,23 +26,15 @@ const ITEMS_PER_PAGE = 10;
 const STATUS_CONFIG: Record<StatusKey, StatusConfig> = {
   [RoomStatusValue.AVAILABLE]: {
     label: 'Disponible',
-    color: 'bg-success-500 text-white',
-    icon: <DashboardIcons.Bed />
   },
   [RoomStatusValue.UNAVAILABLE]: {
     label: 'No Disponible',
-    color: 'bg-red-500 text-white',
-    icon: <DashboardIcons.Alert />
   },
   [RoomStatusValue.CLEANING]: {
     label: 'Limpieza',
-    color: 'bg-orange-500 text-white',
-    icon: <DashboardIcons.List />
   },
   [RoomStatusValue.MAINTENANCE]: {
     label: 'Mantenimiento',
-    color: 'bg-blue-500 text-white',
-    icon: <DashboardIcons.Hotel />
   }
 } as const;
 
@@ -111,18 +102,18 @@ const PriceCell = React.memo(({ price }: { price: number }) => (
 ));
 PriceCell.displayName = 'PriceCell';
 
-const StatusCell = React.memo(({ status }: { status: StatusKey }) => (
-  <TableCell>
-    <div className="flex items-center gap-2">
-      <span className={`inline-flex rounded-full py-1 px-3 text-sm font-medium ${STATUS_CONFIG[status].color}`}>
-        {STATUS_CONFIG[status].label}
-      </span>
-      <IconWrapper className="fill-current">
-        {STATUS_CONFIG[status].icon}
-      </IconWrapper>
-    </div>
-  </TableCell>
-));
+const StatusCell = React.memo(({ status }: { status: StatusKey }) => {
+  const { background, text } = getRoomStatusConfig(status);
+  return (
+    <TableCell>
+      <div className="flex items-center gap-2">
+        <span className={`inline-flex rounded-full py-1 px-3 text-sm font-medium ${background} ${text}`}>
+          {STATUS_CONFIG[status].label}
+        </span>
+      </div>
+    </TableCell>
+  );
+});
 StatusCell.displayName = 'StatusCell';
 
 interface ActionsCellProps {

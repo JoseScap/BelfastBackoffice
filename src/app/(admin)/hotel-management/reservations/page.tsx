@@ -8,11 +8,11 @@ import Pagination from '@/components/tables/Pagination';
 import PageMetadata from '@/components/common/PageMetadata';
 import SearchFilter from '@/components/common/SearchFilter';
 import { DashboardIcons, IconWrapper } from '@/components/common/icons';
+import { getAppointmentStatusConfig } from '@/utils/statusColors';
 
 // Tipos
 interface StatusConfig {
   label: string;
-  color: string;
 }
 
 type SourceKey = 'app' | 'manual';
@@ -24,29 +24,23 @@ type SourceFilterKey = 'all' | SourceKey;
 const ITEMS_PER_PAGE = 10;
 
 const STATUS_CONFIG: Record<StatusKey, StatusConfig> = {
-  [AppointmentStatusValue.APPROVED]: { 
+  [AppointmentStatusValue.APPROVED]: {
     label: 'Aprobado',
-    color: 'bg-success-500 text-white'
   },
   [AppointmentStatusValue.REQUESTED]: {
     label: 'Solicitado',
-    color: 'bg-warning-500 text-white'
   },
   [AppointmentStatusValue.CHECK_IN]: {
     label: 'Check-in',
-    color: 'bg-blue-500 text-white'
   },
   [AppointmentStatusValue.CHECK_OUT]: {
     label: 'Check-out',
-    color: 'bg-gray-500 text-white'
   },
   [AppointmentStatusValue.CANCELLED]: {
     label: 'Cancelado',
-    color: 'bg-red-500 text-white'
   },
   [AppointmentStatusValue.OVERBOOKED]: {
     label: 'Sobrevendido',
-    color: 'bg-gray-500 text-white'
   }
 } as const;
 
@@ -105,13 +99,18 @@ const DateCell = React.memo(({ date }: { date: string }) => (
 ));
 DateCell.displayName = 'DateCell';
 
-const StatusCell = React.memo(({ status }: { status: StatusKey }) => (
-  <TableCell>
-    <span className={`inline-flex rounded-full py-1 px-3 text-sm font-medium ${STATUS_CONFIG[status].color}`}>
-      {STATUS_CONFIG[status].label}
-    </span>
-  </TableCell>
-));
+const StatusCell = React.memo(({ status }: { status: StatusKey }) => {
+  const { background, text } = getAppointmentStatusConfig(status);
+  return (
+    <TableCell>
+      <div className="flex items-center gap-2">
+        <span className={`inline-flex rounded-full py-1 px-3 text-sm font-medium ${background} ${text}`}>
+          {STATUS_CONFIG[status].label}
+        </span>
+      </div>
+    </TableCell>
+  );
+});
 StatusCell.displayName = 'StatusCell';
 
 const SourceCell = React.memo(({ source }: { source: SourceKey }) => (

@@ -5,6 +5,7 @@ import PageBreadcrumb from '@/components/common/PageBreadCrumb';
 import { mockRooms } from '@/mock-data';
 import { RoomStatusValue } from '@/types/hotel';
 import PageMetadata from '@/components/common/PageMetadata';
+import { getRoomStatusConfig } from '@/utils/statusColors';
 
 // Movemos la metadata a un archivo separado
 // export const metadata: Metadata = {
@@ -31,19 +32,9 @@ const RoomGridPage = () => {
   const roomCategories = [...new Set(mockRooms.map((room) => room.category.name))];
 
   // Get status color
-  const getStatusColor = (status: RoomStatusValue) => {
-    switch (status) {
-      case RoomStatusValue.AVAILABLE:
-        return 'bg-success-500';
-      case RoomStatusValue.UNAVAILABLE:
-        return 'bg-red-500';
-      case RoomStatusValue.CLEANING:
-        return 'bg-orange-500';
-      case RoomStatusValue.MAINTENANCE:
-        return 'bg-blue-500';
-      default:
-        return 'bg-gray-500';
-    }
+  const getStatusColor = (status: RoomStatusValue): string => {
+    const { background } = getRoomStatusConfig(status);
+    return background;
   };
 
   // Get category color

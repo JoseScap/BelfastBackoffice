@@ -9,22 +9,7 @@ import PageMetadata from '@/components/common/PageMetadata';
 import PriorityCard from '@/components/common/PriorityCard';
 import SearchFilter from '@/components/common/SearchFilter';
 import { DashboardIcons, IconWrapper } from '@/components/common/icons';
-
-// Constantes y mapeos
-interface PriorityLevel {
-  label: string;
-  color: string;
-  title: string;
-  order: number;
-}
-
-type PriorityKey = 'high' | 'medium' | 'low';
-
-const PRIORITY_LEVELS: Record<PriorityKey, PriorityLevel> = {
-  high: { label: 'Alta', color: 'bg-red-500 text-white', title: 'Prioridad Alta', order: 1 },
-  medium: { label: 'Media', color: 'bg-orange-500 text-white', title: 'Prioridad Media', order: 2 },
-  low: { label: 'Baja', color: 'bg-success-500 text-white', title: 'Prioridad Baja', order: 3 }
-} as const;
+import { PriorityKey, PRIORITY_CONFIG, getPriorityConfig, PriorityConfig } from '@/utils/priorityConfig';
 
 const TABLE_HEADERS = [
   { key: 'guest', label: 'Huésped', minWidth: '220px', extraClasses: 'xl:pl-11' },
@@ -87,13 +72,16 @@ const DateCell = React.memo(({ date }: { date: string }) => (
 ));
 DateCell.displayName = 'DateCell';
 
-const PriorityCell = React.memo(({ priority }: { priority: PriorityKey }) => (
-  <TableCell>
-    <p className={`inline-flex rounded-full py-1 px-3 text-sm font-medium ${PRIORITY_LEVELS[priority].color}`}>
-      {PRIORITY_LEVELS[priority].label}
-    </p>
-  </TableCell>
-));
+const PriorityCell = React.memo(({ priority }: { priority: PriorityKey }) => {
+  const { background, text, label } = getPriorityConfig(priority);
+  return (
+    <TableCell>
+      <p className={`inline-flex rounded-full py-1 px-3 text-sm font-medium ${background} ${text}`}>
+        {label}
+      </p>
+    </TableCell>
+  );
+});
 PriorityCell.displayName = 'PriorityCell';
 
 const ActionsCell = React.memo(() => (
@@ -140,7 +128,7 @@ const PendingRequestsPage = () => {
   // Memoizar los conteos por prioridad
   const priorityCounts = useMemo(() => {
     return Object.fromEntries(
-      (Object.keys(PRIORITY_LEVELS) as Array<PriorityKey>).map(priority => [
+      (Object.keys(PRIORITY_CONFIG) as Array<PriorityKey>).map(priority => [
         priority,
         pendingAppointments.filter(a => a.priority === priority).length
       ])
@@ -163,8 +151,8 @@ const PendingRequestsPage = () => {
   // Memoizar los appointments ordenados
   const sortedAppointments = useMemo(() => {
     return [...filteredAppointments].sort((a, b) => {
-      // Ordenar por prioridad usando el orden definido en PRIORITY_LEVELS
-      const orderDiff = PRIORITY_LEVELS[a.priority].order - PRIORITY_LEVELS[b.priority].order;
+      // Ordenar por prioridad usando el orden definido en PRIORITY_CONFIG
+      const orderDiff = PRIORITY_CONFIG[a.priority].order - PRIORITY_CONFIG[b.priority].order;
       if (orderDiff !== 0) return orderDiff;
       
       // Si tienen la misma prioridad, ordenar por fecha más reciente
@@ -181,7 +169,7 @@ const PendingRequestsPage = () => {
   // Opciones del filtro
   const filterOptions = [
     { value: 'all' as const, label: 'Todas las Prioridades' },
-    ...Object.entries(PRIORITY_LEVELS).map(([value, { title }]) => ({
+    ...Object.entries(PRIORITY_CONFIG).map(([value, { title }]) => ({
       value: value as PriorityKey,
       label: title
     }))
@@ -206,7 +194,7 @@ const PendingRequestsPage = () => {
         />
 
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-3">
-          {(Object.entries(PRIORITY_LEVELS) as Array<[PriorityKey, PriorityLevel]>).map(([priority, { title }]) => (
+          {(Object.entries(PRIORITY_CONFIG) as Array<[PriorityKey, PriorityConfig]>).map(([priority, { title }]) => (
             <PriorityCard
               key={priority}
               title={title}
