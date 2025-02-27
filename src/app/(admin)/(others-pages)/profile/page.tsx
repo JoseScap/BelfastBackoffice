@@ -5,6 +5,7 @@ import UserInfoCard from '@/components/user-profile/UserInfoCard';
 import UserMetaCard from '@/components/user-profile/UserMetaCard';
 import { useAuth } from '@/context/AuthContext';
 import { useRouter } from 'next/navigation';
+import PageMetadata from '@/components/common/PageMetadata';
 
 export default function Profile() {
   const { user, isLoading } = useAuth();
@@ -30,6 +31,7 @@ export default function Profile() {
 
   return (
     <div className="px-5 pt-5 pb-20 lg:pt-6 lg:pb-20 2xl:pt-10 2xl:pb-20">
+      <PageMetadata title="Profile | Belfast Backoffice" description="User profile page" />
       <div className="mb-6 lg:mb-8">
         <h4 className="mb-1 text-xl font-semibold text-gray-900 dark:text-white">Profile</h4>
         <p className="text-sm font-medium text-gray-500 dark:text-gray-400">
