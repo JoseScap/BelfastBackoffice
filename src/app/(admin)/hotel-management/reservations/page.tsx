@@ -1,4 +1,4 @@
-"use client";
+'use client';
 
 import React, { useState, useMemo, useCallback } from 'react';
 import PageBreadcrumb from '@/components/common/PageBreadCrumb';
@@ -8,12 +8,20 @@ import Pagination from '@/components/tables/Pagination';
 import PageMetadata from '@/components/common/PageMetadata';
 import SearchFilter from '@/components/common/SearchFilter';
 import { DashboardIcons, IconWrapper } from '@/components/common/icons';
-import { getAppointmentStatusConfig } from '@/utils/statusColors';
+import {
+  GuestCell,
+  RoomCell,
+  DateCell,
+  AppointmentStatusCell,
+  SourceCell,
+  PriceCell,
+  ActionsCell,
+} from '@/components/tables/TableCells';
 
 // Tipos
-interface StatusConfig {
+type StatusConfig = {
   label: string;
-}
+};
 
 type SourceKey = 'app' | 'manual';
 type StatusKey = AppointmentStatusValue;
@@ -24,29 +32,29 @@ type SourceFilterKey = 'all' | SourceKey;
 const ITEMS_PER_PAGE = 10;
 
 const STATUS_CONFIG: Record<StatusKey, StatusConfig> = {
-  [AppointmentStatusValue.APPROVED]: {
+  Aprobado: {
     label: 'Aprobado',
   },
-  [AppointmentStatusValue.REQUESTED]: {
+  Solicitado: {
     label: 'Solicitado',
   },
-  [AppointmentStatusValue.CHECK_IN]: {
+  'Check-in': {
     label: 'Check-in',
   },
-  [AppointmentStatusValue.CHECK_OUT]: {
+  'Check-out': {
     label: 'Check-out',
   },
-  [AppointmentStatusValue.CANCELLED]: {
+  Cancelado: {
     label: 'Cancelado',
   },
-  [AppointmentStatusValue.OVERBOOKED]: {
+  Sobrevendido: {
     label: 'Sobrevendido',
-  }
-} as const;
+  },
+};
 
 const SOURCE_CONFIG: Record<SourceKey, string> = {
   app: 'Aplicación',
-  manual: 'Manual'
+  manual: 'Manual',
 } as const;
 
 const TABLE_HEADERS = [
@@ -57,112 +65,8 @@ const TABLE_HEADERS = [
   { key: 'status', label: 'Estado', minWidth: '100px' },
   { key: 'source', label: 'Fuente', minWidth: '100px' },
   { key: 'total', label: 'Total', minWidth: '100px' },
-  { key: 'actions', label: 'Acciones', minWidth: 'auto' }
+  { key: 'actions', label: 'Acciones', minWidth: 'auto' },
 ] as const;
-
-// Componentes de tabla memoizados
-const TableCell = React.memo(({ className, children }: { className?: string; children: React.ReactNode }) => (
-  <td className={`border-b border-[#eee] py-5 px-4 dark:border-strokedark ${className || ''}`}>
-    {children}
-  </td>
-));
-TableCell.displayName = 'TableCell';
-
-const GuestCell = React.memo(({ firstName, lastName, email }: { firstName: string; lastName: string; email: string }) => (
-  <TableCell>
-    <h5 className="font-medium text-black dark:text-white">
-      {firstName} {lastName}
-    </h5>
-    <p className="text-sm">{email}</p>
-  </TableCell>
-));
-GuestCell.displayName = 'GuestCell';
-
-const RoomCell = React.memo(({ number, categoryName }: { number: number; categoryName: string }) => (
-  <TableCell>
-    <p className="text-black dark:text-white">#{number}</p>
-    <p className="text-sm">{categoryName}</p>
-  </TableCell>
-));
-RoomCell.displayName = 'RoomCell';
-
-const DateCell = React.memo(({ date }: { date: string }) => (
-  <TableCell>
-    <time dateTime={date} className="text-black dark:text-white">
-      {new Date(date).toLocaleDateString('es-ES', {
-        year: 'numeric',
-        month: 'short',
-        day: 'numeric',
-      })}
-    </time>
-  </TableCell>
-));
-DateCell.displayName = 'DateCell';
-
-const StatusCell = React.memo(({ status }: { status: StatusKey }) => {
-  const { background, text } = getAppointmentStatusConfig(status);
-  return (
-    <TableCell>
-      <div className="flex items-center gap-2">
-        <span className={`inline-flex rounded-full py-1 px-3 text-sm font-medium ${background} ${text}`}>
-          {STATUS_CONFIG[status].label}
-        </span>
-      </div>
-    </TableCell>
-  );
-});
-StatusCell.displayName = 'StatusCell';
-
-const SourceCell = React.memo(({ source }: { source: SourceKey }) => (
-  <TableCell>
-    <p className="text-black dark:text-white capitalize">
-      {SOURCE_CONFIG[source]}
-    </p>
-  </TableCell>
-));
-SourceCell.displayName = 'SourceCell';
-
-const TotalCell = React.memo(({ amount }: { amount: number }) => (
-  <TableCell>
-    <p className="text-black dark:text-white">
-      ${amount.toFixed(2)}
-    </p>
-  </TableCell>
-));
-TotalCell.displayName = 'TotalCell';
-
-interface ActionsCellProps {
-  onView: () => void;
-  onDelete: () => void;
-}
-
-const ActionsCell = React.memo(({ onView, onDelete }: ActionsCellProps) => (
-  <TableCell>
-    <div className="flex items-center space-x-3.5">
-      <button 
-        onClick={onView}
-        className="hover:text-primary focus:outline-none focus:ring-2 focus:ring-primary rounded-full p-1" 
-        title="Ver detalles"
-        aria-label="Ver detalles de la reservación"
-      >
-        <IconWrapper className="fill-current">
-          <DashboardIcons.Search />
-        </IconWrapper>
-      </button>
-      <button 
-        onClick={onDelete}
-        className="hover:text-primary focus:outline-none focus:ring-2 focus:ring-primary rounded-full p-1" 
-        title="Eliminar reservación"
-        aria-label="Eliminar reservación"
-      >
-        <IconWrapper className="fill-current">
-          <DashboardIcons.Alert />
-        </IconWrapper>
-      </button>
-    </div>
-  </TableCell>
-));
-ActionsCell.displayName = 'ActionsCell';
 
 const ReservationsPage = () => {
   const [currentPage, setCurrentPage] = useState(1);
@@ -190,55 +94,59 @@ const ReservationsPage = () => {
   const filteredAppointments = useMemo(() => {
     const searchLower = searchTerm.toLowerCase();
     return mockAppointments.filter(appointment => {
-      const matchesSearch = 
+      const matchesSearch =
         appointment.guest.firstName.toLowerCase().includes(searchLower) ||
         appointment.guest.lastName.toLowerCase().includes(searchLower) ||
         appointment.room.number.toString().includes(searchTerm) ||
         appointment.status.value.toLowerCase().includes(searchLower);
-      
+
       const matchesStatus = statusFilter === 'all' || appointment.status.value === statusFilter;
       const matchesSource = sourceFilter === 'all' || appointment.source === sourceFilter;
-      
+
       return matchesSearch && matchesStatus && matchesSource;
     });
   }, [searchTerm, statusFilter, sourceFilter]);
 
   // Memoizar los appointments ordenados
   const sortedAppointments = useMemo(() => {
-    return [...filteredAppointments].sort((a, b) => 
-      new Date(b.checkInDate).getTime() - new Date(a.checkInDate).getTime()
+    return [...filteredAppointments].sort(
+      (a, b) => new Date(b.checkInDate).getTime() - new Date(a.checkInDate).getTime()
     );
   }, [filteredAppointments]);
 
   // Paginar appointments
-  const currentAppointments = useMemo(() => 
-    sortedAppointments.slice(
-      (currentPage - 1) * ITEMS_PER_PAGE,
-      currentPage * ITEMS_PER_PAGE
-    ),
+  const currentAppointments = useMemo(
+    () =>
+      sortedAppointments.slice((currentPage - 1) * ITEMS_PER_PAGE, currentPage * ITEMS_PER_PAGE),
     [sortedAppointments, currentPage]
   );
 
   // Opciones de los filtros
-  const statusOptions = useMemo(() => [
-    { value: 'all' as const, label: 'Todos los Estados' },
-    ...Object.entries(STATUS_CONFIG).map(([value, { label }]) => ({
-      value: value as StatusKey,
-      label
-    }))
-  ], []);
+  const statusOptions = useMemo(
+    () => [
+      { value: 'all' as const, label: 'Todos los Estados' },
+      ...Object.entries(STATUS_CONFIG).map(([value, { label }]) => ({
+        value: value as StatusKey,
+        label,
+      })),
+    ],
+    []
+  );
 
-  const sourceOptions = useMemo(() => [
-    { value: 'all' as const, label: 'Todas las Fuentes' },
-    ...Object.entries(SOURCE_CONFIG).map(([value, label]) => ({
-      value: value as SourceKey,
-      label
-    }))
-  ], []);
+  const sourceOptions = useMemo(
+    () => [
+      { value: 'all' as const, label: 'Todas las Fuentes' },
+      ...Object.entries(SOURCE_CONFIG).map(([value, label]) => ({
+        value: value as SourceKey,
+        label,
+      })),
+    ],
+    []
+  );
 
   return (
     <>
-      <PageMetadata 
+      <PageMetadata
         title="Reservas | Belfast Backoffice"
         description="Gestión de reservaciones para Belfast Backoffice"
       />
@@ -259,7 +167,7 @@ const ReservationsPage = () => {
               <select
                 className="w-full rounded-md border border-stroke bg-transparent py-2 px-4 outline-none focus:border-primary dark:border-strokedark dark:bg-boxdark dark:focus:border-primary"
                 value={sourceFilter}
-                onChange={(e) => setSourceFilter(e.target.value as SourceFilterKey)}
+                onChange={e => setSourceFilter(e.target.value as SourceFilterKey)}
                 aria-label="Filtrar por fuente"
               >
                 {sourceOptions.map(option => (
@@ -272,7 +180,7 @@ const ReservationsPage = () => {
           </div>
 
           <div className="flex items-center gap-4">
-            <button 
+            <button
               onClick={handleCreateReservation}
               className="flex items-center gap-2 rounded-md bg-primary py-2 px-4.5 font-medium text-white hover:bg-opacity-80 focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2"
               aria-label="Crear nueva reservación"
@@ -291,9 +199,11 @@ const ReservationsPage = () => {
               <thead>
                 <tr className="bg-gray-2 text-left dark:bg-meta-4">
                   {TABLE_HEADERS.map(header => (
-                    <th 
+                    <th
                       key={header.key}
-                      className={`${header.minWidth ? `min-w-[${header.minWidth}]` : ''} py-4 px-4 font-medium text-black dark:text-white`}
+                      className={`${
+                        header.minWidth ? `min-w-[${header.minWidth}]` : ''
+                      } py-4 px-4 font-medium text-black dark:text-white`}
                       scope="col"
                     >
                       {header.label}
@@ -302,23 +212,23 @@ const ReservationsPage = () => {
                 </tr>
               </thead>
               <tbody>
-                {currentAppointments.map((appointment) => (
+                {currentAppointments.map(appointment => (
                   <tr key={appointment.id}>
-                    <GuestCell 
+                    <GuestCell
                       firstName={appointment.guest.firstName}
                       lastName={appointment.guest.lastName}
                       email={appointment.guest.email}
                     />
-                    <RoomCell 
+                    <RoomCell
                       number={appointment.room.number}
                       categoryName={appointment.room.category.name}
                     />
                     <DateCell date={appointment.checkInDate} />
                     <DateCell date={appointment.checkOutDate} />
-                    <StatusCell status={appointment.status.value as StatusKey} />
-                    <SourceCell source={appointment.source as SourceKey} />
-                    <TotalCell amount={appointment.totalPrice} />
-                    <ActionsCell 
+                    <AppointmentStatusCell status={appointment.status.value} />
+                    <SourceCell label={SOURCE_CONFIG[appointment.source]} />
+                    <PriceCell amount={appointment.totalPrice} />
+                    <ActionsCell
                       onView={() => handleViewReservation(appointment.id)}
                       onDelete={() => handleDeleteReservation(appointment.id)}
                     />

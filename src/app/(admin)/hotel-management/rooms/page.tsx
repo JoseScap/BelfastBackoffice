@@ -1,4 +1,4 @@
-"use client";
+'use client';
 
 import React, { useState, useMemo, useCallback } from 'react';
 
@@ -8,11 +8,19 @@ import PageMetadata from '@/components/common/PageMetadata';
 import SearchFilter from '@/components/common/SearchFilter';
 import Pagination from '@/components/tables/Pagination';
 import { DashboardIcons, IconWrapper } from '@/components/common/icons';
+import {
+  NumberCell,
+  CategoryCell,
+  FloorCell,
+  CapacityCell,
+  PriceCell,
+  RoomStatusCell,
+  ActionsCell,
+} from '@/components/tables/TableCells';
 
 // Datos y tipos
 import { mockRooms } from '@/mock-data';
 import { RoomStatusValue } from '@/types/hotel';
-import { getRoomStatusConfig } from '@/utils/statusColors';
 
 interface StatusConfig {
   label: string;
@@ -24,19 +32,19 @@ type FilterKey = 'all' | StatusKey;
 const ITEMS_PER_PAGE = 10;
 
 const STATUS_CONFIG: Record<StatusKey, StatusConfig> = {
-  [RoomStatusValue.AVAILABLE]: {
+  Disponible: {
     label: 'Disponible',
   },
-  [RoomStatusValue.UNAVAILABLE]: {
+  'No Disponible': {
     label: 'No Disponible',
   },
-  [RoomStatusValue.CLEANING]: {
+  Limpieza: {
     label: 'Limpieza',
   },
-  [RoomStatusValue.MAINTENANCE]: {
+  Mantenimiento: {
     label: 'Mantenimiento',
-  }
-} as const;
+  },
+};
 
 const TABLE_HEADERS = [
   { key: 'number', label: 'Número', minWidth: '100px' },
@@ -45,120 +53,8 @@ const TABLE_HEADERS = [
   { key: 'capacity', label: 'Capacidad', minWidth: '120px' },
   { key: 'price', label: 'Precio/Noche', minWidth: '120px' },
   { key: 'status', label: 'Estado', minWidth: '120px' },
-  { key: 'actions', label: 'Acciones', minWidth: 'auto' }
+  { key: 'actions', label: 'Acciones', minWidth: 'auto' },
 ] as const;
-
-// Componentes de tabla memoizados
-const TableCell = React.memo(({ className, children }: { className?: string; children: React.ReactNode }) => (
-  <td className={`border-b border-[#eee] py-5 px-4 dark:border-strokedark ${className || ''}`}>
-    {children}
-  </td>
-));
-TableCell.displayName = 'TableCell';
-
-const NumberCell = React.memo(({ number }: { number: number }) => (
-  <TableCell>
-    <h5 className="font-medium text-black dark:text-white">
-      #{number}
-    </h5>
-  </TableCell>
-));
-NumberCell.displayName = 'NumberCell';
-
-const CategoryCell = React.memo(({ name, description }: { name: string; description: string }) => (
-  <TableCell>
-    <h5 className="font-medium text-black dark:text-white">
-      {name}
-    </h5>
-    <p className="text-sm">{description}</p>
-  </TableCell>
-));
-CategoryCell.displayName = 'CategoryCell';
-
-const FloorCell = React.memo(({ floor }: { floor: number }) => (
-  <TableCell>
-    <p className="text-black dark:text-white">
-      {floor}º Piso
-    </p>
-  </TableCell>
-));
-FloorCell.displayName = 'FloorCell';
-
-const CapacityCell = React.memo(({ capacity }: { capacity: number }) => (
-  <TableCell>
-    <p className="text-black dark:text-white">
-      {capacity} {capacity === 1 ? 'persona' : 'personas'}
-    </p>
-  </TableCell>
-));
-CapacityCell.displayName = 'CapacityCell';
-
-const PriceCell = React.memo(({ price }: { price: number }) => (
-  <TableCell>
-    <p className="text-black dark:text-white">
-      ${price.toFixed(2)}
-    </p>
-  </TableCell>
-));
-PriceCell.displayName = 'PriceCell';
-
-const StatusCell = React.memo(({ status }: { status: StatusKey }) => {
-  const { background, text } = getRoomStatusConfig(status);
-  return (
-    <TableCell>
-      <div className="flex items-center gap-2">
-        <span className={`inline-flex rounded-full py-1 px-3 text-sm font-medium ${background} ${text}`}>
-          {STATUS_CONFIG[status].label}
-        </span>
-      </div>
-    </TableCell>
-  );
-});
-StatusCell.displayName = 'StatusCell';
-
-interface ActionsCellProps {
-  onView: () => void;
-  onEdit: () => void;
-  onDelete: () => void;
-}
-
-const ActionsCell = React.memo(({ onView, onEdit, onDelete }: ActionsCellProps) => (
-  <TableCell>
-    <div className="flex items-center space-x-3.5">
-      <button 
-        onClick={onView}
-        className="hover:text-primary focus:outline-none focus:ring-2 focus:ring-primary rounded-full p-1" 
-        title="Ver detalles"
-        aria-label="Ver detalles de la habitación"
-      >
-        <IconWrapper className="fill-current">
-          <DashboardIcons.Search />
-        </IconWrapper>
-      </button>
-      <button 
-        onClick={onEdit}
-        className="hover:text-primary focus:outline-none focus:ring-2 focus:ring-primary rounded-full p-1" 
-        title="Editar habitación"
-        aria-label="Editar habitación"
-      >
-        <IconWrapper className="fill-current">
-          <DashboardIcons.List />
-        </IconWrapper>
-      </button>
-      <button 
-        onClick={onDelete}
-        className="hover:text-primary focus:outline-none focus:ring-2 focus:ring-primary rounded-full p-1" 
-        title="Eliminar habitación"
-        aria-label="Eliminar habitación"
-      >
-        <IconWrapper className="fill-current">
-          <DashboardIcons.Alert />
-        </IconWrapper>
-      </button>
-    </div>
-  </TableCell>
-));
-ActionsCell.displayName = 'ActionsCell';
 
 const RoomsPage = () => {
   const [currentPage, setCurrentPage] = useState(1);
@@ -184,39 +80,41 @@ const RoomsPage = () => {
   const filteredRooms = useMemo(() => {
     const searchLower = searchTerm.toLowerCase();
     return mockRooms.filter(room => {
-      const matchesSearch = 
+      const matchesSearch =
         room.number.toString().includes(searchTerm) ||
         room.category.name.toLowerCase().includes(searchLower) ||
         room.category.description.toLowerCase().includes(searchLower);
-      
+
       const matchesStatus = statusFilter === 'all' || room.status.value === statusFilter;
-      
+
       return matchesSearch && matchesStatus;
     });
   }, [searchTerm, statusFilter]);
 
-  const sortedRooms = useMemo(() => (
-    [...filteredRooms].sort((a, b) => a.number - b.number)
-  ), [filteredRooms]);
+  const sortedRooms = useMemo(
+    () => [...filteredRooms].sort((a, b) => a.number - b.number),
+    [filteredRooms]
+  );
 
-  const currentRooms = useMemo(() => (
-    sortedRooms.slice(
-      (currentPage - 1) * ITEMS_PER_PAGE,
-      currentPage * ITEMS_PER_PAGE
-    )
-  ), [sortedRooms, currentPage]);
+  const currentRooms = useMemo(
+    () => sortedRooms.slice((currentPage - 1) * ITEMS_PER_PAGE, currentPage * ITEMS_PER_PAGE),
+    [sortedRooms, currentPage]
+  );
 
-  const statusOptions = useMemo(() => [
-    { value: 'all' as const, label: 'Todos los Estados' },
-    ...Object.entries(STATUS_CONFIG).map(([value, { label }]) => ({
-      value: value as StatusKey,
-      label
-    }))
-  ], []);
+  const statusOptions = useMemo(
+    () => [
+      { value: 'all' as const, label: 'Todos los Estados' },
+      ...Object.entries(STATUS_CONFIG).map(([value, { label }]) => ({
+        value: value as StatusKey,
+        label,
+      })),
+    ],
+    []
+  );
 
   return (
     <>
-      <PageMetadata 
+      <PageMetadata
         title="Habitaciones | Belfast Backoffice"
         description="Gestión de habitaciones para Belfast Backoffice"
       />
@@ -233,7 +131,7 @@ const RoomsPage = () => {
             totalResults={filteredRooms.length}
           />
 
-          <button 
+          <button
             onClick={handleCreateRoom}
             className="flex items-center gap-2 rounded-md bg-primary py-2 px-4.5 font-medium text-white hover:bg-opacity-80 focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2"
             aria-label="Crear nueva habitación"
@@ -251,9 +149,11 @@ const RoomsPage = () => {
               <thead>
                 <tr className="bg-gray-2 text-left dark:bg-meta-4">
                   {TABLE_HEADERS.map(header => (
-                    <th 
+                    <th
                       key={header.key}
-                      className={`${header.minWidth ? `min-w-[${header.minWidth}]` : ''} py-4 px-4 font-medium text-black dark:text-white`}
+                      className={`${
+                        header.minWidth ? `min-w-[${header.minWidth}]` : ''
+                      } py-4 px-4 font-medium text-black dark:text-white`}
                       scope="col"
                     >
                       {header.label}
@@ -262,18 +162,18 @@ const RoomsPage = () => {
                 </tr>
               </thead>
               <tbody>
-                {currentRooms.map((room) => (
+                {currentRooms.map(room => (
                   <tr key={room.id}>
                     <NumberCell number={room.number} />
-                    <CategoryCell 
+                    <CategoryCell
                       name={room.category.name}
                       description={room.category.description}
                     />
                     <FloorCell floor={room.floor} />
                     <CapacityCell capacity={room.capacity} />
-                    <PriceCell price={room.category.price} />
-                    <StatusCell status={room.status.value as StatusKey} />
-                    <ActionsCell 
+                    <PriceCell amount={room.category.price} />
+                    <RoomStatusCell status={room.status.value} />
+                    <ActionsCell
                       onView={() => handleViewRoom(room.id)}
                       onEdit={() => handleEditRoom(room.id)}
                       onDelete={() => handleDeleteRoom(room.id)}
@@ -298,4 +198,4 @@ const RoomsPage = () => {
   );
 };
 
-export default RoomsPage; 
+export default RoomsPage;

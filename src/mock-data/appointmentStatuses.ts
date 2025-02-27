@@ -1,35 +1,35 @@
-import { AppointmentStatus, AppointmentStatusValue } from '@/types/hotel';
 import { v4 as uuidv4 } from 'uuid';
+import { AppointmentStatus, APPOINTMENT_STATUS } from '@/types/hotel';
 
 export const mockAppointmentStatuses: AppointmentStatus[] = [
   {
     id: uuidv4(),
-    description: 'Reservation has been requested',
-    value: AppointmentStatusValue.REQUESTED,
+    description: 'Reservation request is pending approval',
+    value: APPOINTMENT_STATUS.REQUESTED,
   },
   {
     id: uuidv4(),
     description: 'Reservation has been approved',
-    value: AppointmentStatusValue.APPROVED,
+    value: APPOINTMENT_STATUS.APPROVED,
   },
   {
     id: uuidv4(),
     description: 'Guest has checked in',
-    value: AppointmentStatusValue.CHECK_IN,
+    value: APPOINTMENT_STATUS.CHECK_IN,
   },
   {
     id: uuidv4(),
     description: 'Guest has checked out',
-    value: AppointmentStatusValue.CHECK_OUT,
+    value: APPOINTMENT_STATUS.CHECK_OUT,
   },
   {
     id: uuidv4(),
     description: 'Reservation has been cancelled',
-    value: AppointmentStatusValue.CANCELLED,
+    value: APPOINTMENT_STATUS.CANCELLED,
   },
   {
     id: uuidv4(),
     description: 'Room was overbooked',
-    value: AppointmentStatusValue.OVERBOOKED,
+    value: APPOINTMENT_STATUS.OVERBOOKED,
   },
-]; 
+];

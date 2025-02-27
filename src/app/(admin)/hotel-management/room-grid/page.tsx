@@ -6,6 +6,12 @@ import { mockRooms } from '@/mock-data';
 import { RoomStatusValue } from '@/types/hotel';
 import PageMetadata from '@/components/common/PageMetadata';
 import { getRoomStatusConfig } from '@/utils/statusColors';
+import {
+  FloorSelect,
+  DateSelect,
+  StatusLegend,
+  CategoryLegend,
+} from '@/components/common/SelectControls';
 
 // Movemos la metadata a un archivo separado
 // export const metadata: Metadata = {
@@ -14,87 +20,6 @@ import { getRoomStatusConfig } from '@/utils/statusColors';
 // };
 
 // Componentes
-const FloorSelect = React.memo(
-  ({
-    value,
-    floors,
-    onChange,
-  }: {
-    value: number;
-    floors: number[];
-    onChange: (floor: number) => void;
-  }) => (
-    <select
-      className="w-full rounded-md border border-stroke bg-transparent py-2 px-4 outline-none focus:border-primary dark:border-strokedark dark:bg-boxdark dark:focus:border-primary"
-      value={value}
-      onChange={e => onChange(Number(e.target.value))}
-    >
-      {floors.map(floor => (
-        <option key={floor} value={floor}>
-          Piso {floor}
-        </option>
-      ))}
-    </select>
-  )
-);
-FloorSelect.displayName = 'FloorSelect';
-
-const DateSelect = React.memo(
-  ({ value, onChange }: { value: string; onChange: (date: string) => void }) => (
-    <input
-      type="date"
-      className="w-full rounded-md border border-stroke bg-transparent py-2 px-4 outline-none focus:border-primary dark:border-strokedark dark:bg-boxdark dark:focus:border-primary"
-      value={value}
-      onChange={e => onChange(e.target.value)}
-    />
-  )
-);
-DateSelect.displayName = 'DateSelect';
-
-const StatusLegend = React.memo(() => (
-  <div className="flex flex-col gap-2">
-    <h5 className="font-medium text-black dark:text-white">Estado</h5>
-    <div className="flex flex-wrap gap-3">
-      {Object.values(RoomStatusValue).map(status => {
-        const { background } = getRoomStatusConfig(status);
-        return (
-          <div key={status} className="flex items-center gap-1.5">
-            <span className={`h-4 w-4 rounded-full ${background}`} />
-            <span className="text-sm">{status}</span>
-          </div>
-        );
-      })}
-    </div>
-  </div>
-));
-StatusLegend.displayName = 'StatusLegend';
-
-const CategoryLegend = React.memo(
-  ({
-    categories,
-    getCategoryColor,
-  }: {
-    categories: string[];
-    getCategoryColor: (name: string) => string;
-  }) => (
-    <div className="flex flex-col gap-2">
-      <h5 className="font-medium text-black dark:text-white">Categorías de Habitación</h5>
-      <div className="flex flex-wrap gap-3">
-        {categories.map(category => (
-          <div key={category} className="flex items-center gap-1.5">
-            <span
-              className="h-4 w-4 rounded-sm border border-stroke dark:border-strokedark"
-              style={{ backgroundColor: getCategoryColor(category) }}
-            />
-            <span className="text-sm">{category}</span>
-          </div>
-        ))}
-      </div>
-    </div>
-  )
-);
-CategoryLegend.displayName = 'CategoryLegend';
-
 interface RoomCardProps {
   room: (typeof mockRooms)[0];
   statusBackground: string;

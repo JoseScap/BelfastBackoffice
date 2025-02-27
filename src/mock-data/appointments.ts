@@ -1,90 +1,90 @@
-import { Appointment, AppointmentStatusValue } from '@/types/hotel';
 import { v4 as uuidv4 } from 'uuid';
+import { addDays, subDays } from 'date-fns';
+import { Appointment, APPOINTMENT_STATUS } from '@/types/hotel';
 import { mockRooms } from './rooms';
 import { mockGuests } from './guests';
 import { mockAppointmentStatuses } from './appointmentStatuses';
 
-// Helper to get random item from array
+// Helper function to get a random item from an array
 const getRandomItem = <T>(array: T[]): T => {
   return array[Math.floor(Math.random() * array.length)];
 };
 
-// Helper to get random date within range
-const getRandomDate = (start: Date, end: Date): string => {
-  return new Date(
-    start.getTime() + Math.random() * (end.getTime() - start.getTime())
-  ).toISOString();
+// Helper function to get a random date between start and end
+const getRandomDate = (start: Date, end: Date) => {
+  return new Date(start.getTime() + Math.random() * (end.getTime() - start.getTime()));
 };
 
-// Helper to get status by value
-const getStatusByValue = (value: AppointmentStatusValue) => {
-  return mockAppointmentStatuses.find(status => status.value === value) || mockAppointmentStatuses[0];
-};
+// Generate mock appointments
+export const mockAppointments: Appointment[] = [];
 
-// Current date
-const now = new Date();
+// Get today's date at midnight
+const today = new Date();
+today.setHours(0, 0, 0, 0);
 
-// Generate 30 mock appointments
-export const mockAppointments: Appointment[] = Array.from({ length: 30 }, () => {
-  // Random check-in date between today and 30 days from now
-  const checkInDate = getRandomDate(
-    now,
-    new Date(now.getFullYear(), now.getMonth(), now.getDate() + 30)
-  );
-  
-  // Random check-out date between check-in and 7 days after check-in
-  const checkInDateObj = new Date(checkInDate);
-  const checkOutDate = getRandomDate(
-    new Date(checkInDateObj.getTime() + 24 * 60 * 60 * 1000), // At least 1 day stay
-    new Date(checkInDateObj.getTime() + 7 * 24 * 60 * 60 * 1000) // At most 7 days stay
-  );
+// Generate appointments for the past 30 days and next 30 days
+const pastStart = subDays(today, 30);
+const futureEnd = addDays(today, 30);
 
-  // Random room and guest
+// Generate 50 appointments
+for (let i = 0; i < 50; i++) {
+  // Randomly decide if this is a past or future appointment
+  const isPast = Math.random() < 0.5;
+
+  // Generate check-in and check-out dates
+  let checkInDate: Date;
+  let checkOutDate: Date;
+
+  if (isPast) {
+    checkInDate = getRandomDate(pastStart, today);
+    checkOutDate = getRandomDate(checkInDate, today);
+  } else {
+    checkInDate = getRandomDate(today, futureEnd);
+    checkOutDate = getRandomDate(checkInDate, futureEnd);
+  }
+
+  // Get random room and guest
   const room = getRandomItem(mockRooms);
   const guest = getRandomItem(mockGuests);
 
   // Determine status based on dates
   let status;
-  const checkInTime = new Date(checkInDate).getTime();
-  const checkOutTime = new Date(checkOutDate).getTime();
-  const currentTime = now.getTime();
-
-  if (currentTime > checkOutTime) {
-    status = getStatusByValue(AppointmentStatusValue.CHECK_OUT);
-  } else if (currentTime > checkInTime) {
-    status = getStatusByValue(AppointmentStatusValue.CHECK_IN);
+  if (isPast) {
+    // For past reservations, use CHECK_OUT
+    status = mockAppointmentStatuses.find(s => s.value === APPOINTMENT_STATUS.CHECK_OUT);
   } else {
     // For future reservations, randomly assign REQUESTED, APPROVED, or CANCELLED
     const futureStatuses = [
-      AppointmentStatusValue.REQUESTED,
-      AppointmentStatusValue.APPROVED,
-      AppointmentStatusValue.CANCELLED,
+      APPOINTMENT_STATUS.REQUESTED,
+      APPOINTMENT_STATUS.APPROVED,
+      APPOINTMENT_STATUS.CANCELLED,
     ];
-    status = getStatusByValue(getRandomItem(futureStatuses));
+    const statusValue = getRandomItem(futureStatuses);
+    status = mockAppointmentStatuses.find(s => s.value === statusValue);
   }
 
-  // Calculate total price based on room price and stay duration
-  const stayDurationMs = new Date(checkOutDate).getTime() - new Date(checkInDate).getTime();
-  const stayDurationDays = Math.ceil(stayDurationMs / (1000 * 60 * 60 * 24));
-  const totalPrice = room.category.price * stayDurationDays;
+  // Calculate total price (random number of days * room price)
+  const days = Math.ceil((checkOutDate.getTime() - checkInDate.getTime()) / (1000 * 60 * 60 * 24));
+  const totalPrice = days * room.category.price;
 
-  // Random source (70% app, 30% manual)
-  const source = Math.random() < 0.7 ? 'app' : 'manual';
-
-  return {
+  mockAppointments.push({
     id: uuidv4(),
     room,
     guest,
-    checkInDate,
-    checkOutDate,
-    paymentDate: status.value !== AppointmentStatusValue.REQUESTED ? 
-      getRandomDate(new Date(now.getFullYear(), now.getMonth() - 1), now) : 
-      undefined,
-    status,
+    checkInDate: checkInDate.toISOString(),
+    checkOutDate: checkOutDate.toISOString(),
+    paymentDate:
+      status?.value === APPOINTMENT_STATUS.APPROVED ? checkInDate.toISOString() : undefined,
+    status: status!,
     totalPrice,
-    notes: Math.random() > 0.7 ? 'Special requests: late check-out requested' : undefined,
-    createdAt: getRandomDate(new Date(now.getFullYear(), now.getMonth() - 2), now),
-    updatedAt: getRandomDate(new Date(now.getFullYear(), now.getMonth() - 1), now),
-    source,
-  };
-}); 
+    notes: Math.random() > 0.7 ? 'Some special requests for the stay' : undefined,
+    createdAt: subDays(checkInDate, Math.floor(Math.random() * 10)).toISOString(),
+    updatedAt: subDays(checkInDate, Math.floor(Math.random() * 5)).toISOString(),
+    source: Math.random() > 0.5 ? 'app' : 'manual',
+  });
+}
+
+// Sort appointments by check-in date
+mockAppointments.sort(
+  (a, b) => new Date(a.checkInDate).getTime() - new Date(b.checkInDate).getTime()
+);

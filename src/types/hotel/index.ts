@@ -1,30 +1,25 @@
 // Hotel Management Types
 
 // Room Categories
-export interface RoomCategory {
+export type RoomCategory = {
   id: string;
   name: string;
   price: number;
   description: string;
   images: string[];
-}
+};
 
 // Room Status
-export enum RoomStatusValue {
-  CLEANING = 'Limpieza',
-  AVAILABLE = 'Disponible',
-  UNAVAILABLE = 'No Disponible',
-  MAINTENANCE = 'Mantenimiento'
-}
+export type RoomStatusValue = 'Limpieza' | 'Disponible' | 'No Disponible' | 'Mantenimiento';
 
-export interface RoomStatus {
+export type RoomStatus = {
   id: string;
   description: string;
   value: RoomStatusValue;
-}
+};
 
 // Rooms
-export interface Room {
+export type Room = {
   id: string;
   number: number;
   floor: number;
@@ -37,26 +32,42 @@ export interface Room {
   };
   category: RoomCategory;
   status: RoomStatus;
-}
+};
 
 // Appointment Status
-export enum AppointmentStatusValue {
-  REQUESTED = 'Solicitada',
-  APPROVED = 'Aprobada',
-  CHECK_IN = 'Check-in',
-  CHECK_OUT = 'Check-out',
-  CANCELLED = 'Cancelada',
-  OVERBOOKED = 'Sobrevendida'
-}
+export type AppointmentStatusValue =
+  | 'Aprobado'
+  | 'Solicitado'
+  | 'Check-in'
+  | 'Check-out'
+  | 'Cancelado'
+  | 'Sobrevendido';
 
-export interface AppointmentStatus {
+// Helper constants for type safety and autocompletion
+export const ROOM_STATUS = {
+  CLEANING: 'Limpieza' as RoomStatusValue,
+  AVAILABLE: 'Disponible' as RoomStatusValue,
+  UNAVAILABLE: 'No Disponible' as RoomStatusValue,
+  MAINTENANCE: 'Mantenimiento' as RoomStatusValue,
+} as const;
+
+export const APPOINTMENT_STATUS = {
+  APPROVED: 'Aprobado' as AppointmentStatusValue,
+  REQUESTED: 'Solicitado' as AppointmentStatusValue,
+  CHECK_IN: 'Check-in' as AppointmentStatusValue,
+  CHECK_OUT: 'Check-out' as AppointmentStatusValue,
+  CANCELLED: 'Cancelado' as AppointmentStatusValue,
+  OVERBOOKED: 'Sobrevendido' as AppointmentStatusValue,
+} as const;
+
+export type AppointmentStatus = {
   id: string;
   description: string;
   value: AppointmentStatusValue;
-}
+};
 
 // Guest information
-export interface Guest {
+export type Guest = {
   id: string;
   firstName: string;
   lastName: string;
@@ -64,10 +75,10 @@ export interface Guest {
   phone: string;
   documentType: string;
   documentNumber: string;
-}
+};
 
 // Appointment/Reservation
-export interface Appointment {
+export type Appointment = {
   id: string;
   room: Room;
   guest: Guest;
@@ -80,10 +91,10 @@ export interface Appointment {
   createdAt: string; // ISO date string
   updatedAt: string; // ISO date string
   source: 'app' | 'manual'; // Source of the reservation
-}
+};
 
 // Pending Appointment (for reservations in process)
-export interface PendingAppointment extends Omit<Appointment, 'room' | 'status'> {
+export type PendingAppointment = Omit<Appointment, 'room' | 'status'> & {
   roomCategory: RoomCategory;
   ttl: string; // ISO date string when this pending reservation expires
-} 
+};

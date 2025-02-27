@@ -3,7 +3,7 @@
 import React, { useMemo } from 'react';
 import PageBreadcrumb from '@/components/common/PageBreadCrumb';
 import { mockAppointments, mockRooms } from '@/mock-data';
-import { AppointmentStatusValue, RoomStatusValue } from '@/types/hotel';
+import { RoomStatusValue, APPOINTMENT_STATUS, ROOM_STATUS } from '@/types/hotel';
 import PageMetadata from '@/components/common/PageMetadata';
 import StatCard from '@/components/common/StatCard';
 import QuickLinkCard from '@/components/common/QuickLinkCard';
@@ -22,18 +22,18 @@ const HotelManagementDashboard = () => {
     return {
       checkIns: mockAppointments.filter(
         appointment =>
-          appointment.status.value === AppointmentStatusValue.APPROVED &&
+          appointment.status.value === APPOINTMENT_STATUS.APPROVED &&
           isSameDay(appointment.checkInDate)
       ).length,
 
       checkOuts: mockAppointments.filter(
         appointment =>
-          appointment.status.value === AppointmentStatusValue.CHECK_IN &&
+          appointment.status.value === APPOINTMENT_STATUS.CHECK_IN &&
           isSameDay(appointment.checkOutDate)
       ).length,
 
       pending: mockAppointments.filter(
-        appointment => appointment.status.value === AppointmentStatusValue.REQUESTED
+        appointment => appointment.status.value === APPOINTMENT_STATUS.REQUESTED
       ).length,
     };
   }, []);
@@ -47,10 +47,10 @@ const HotelManagementDashboard = () => {
     }, {} as Record<RoomStatusValue, number>);
 
     return {
-      available: counts[RoomStatusValue.AVAILABLE] || 0,
-      cleaning: counts[RoomStatusValue.CLEANING] || 0,
-      maintenance: counts[RoomStatusValue.MAINTENANCE] || 0,
-      unavailable: counts[RoomStatusValue.UNAVAILABLE] || 0,
+      available: counts[ROOM_STATUS.AVAILABLE] || 0,
+      cleaning: counts[ROOM_STATUS.CLEANING] || 0,
+      maintenance: counts[ROOM_STATUS.MAINTENANCE] || 0,
+      unavailable: counts[ROOM_STATUS.UNAVAILABLE] || 0,
     };
   }, []);
 
@@ -145,28 +145,28 @@ const HotelManagementDashboard = () => {
   // Definir los estados de habitaciones para mostrar en las estadísticas
   const roomStats = [
     {
-      status: RoomStatusValue.AVAILABLE,
+      status: ROOM_STATUS.AVAILABLE,
       count: roomCounts.available,
       label: 'Disponible',
-      color: getRoomStatusConfig(RoomStatusValue.AVAILABLE).background,
+      color: getRoomStatusConfig(ROOM_STATUS.AVAILABLE).background,
     },
     {
-      status: RoomStatusValue.CLEANING,
+      status: ROOM_STATUS.CLEANING,
       count: roomCounts.cleaning,
       label: 'Limpieza',
-      color: getRoomStatusConfig(RoomStatusValue.CLEANING).background,
+      color: getRoomStatusConfig(ROOM_STATUS.CLEANING).background,
     },
     {
-      status: RoomStatusValue.MAINTENANCE,
+      status: ROOM_STATUS.MAINTENANCE,
       count: roomCounts.maintenance,
       label: 'Mantenimiento',
-      color: getRoomStatusConfig(RoomStatusValue.MAINTENANCE).background,
+      color: getRoomStatusConfig(ROOM_STATUS.MAINTENANCE).background,
     },
     {
-      status: RoomStatusValue.UNAVAILABLE,
+      status: ROOM_STATUS.UNAVAILABLE,
       count: roomCounts.unavailable,
       label: 'No Disponible',
-      color: getRoomStatusConfig(RoomStatusValue.UNAVAILABLE).background,
+      color: getRoomStatusConfig(ROOM_STATUS.UNAVAILABLE).background,
     },
   ];
 
