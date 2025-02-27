@@ -80,7 +80,7 @@ const AppHeader: React.FC = () => {
                 />
               </svg>
             )}
-            {/* Cross Icon */}
+            Cross Icon
           </button>
 
           <Link href="/" className="lg:hidden">
