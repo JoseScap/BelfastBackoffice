@@ -1,15 +1,52 @@
-"use client";
-import Checkbox from "@/components/form/input/Checkbox";
-import Input from "@/components/form/input/InputField";
-import Label from "@/components/form/Label";
-import Button from "@/components/ui/button/Button";
-import { ChevronLeftIcon, EyeCloseIcon, EyeIcon } from "@/icons";
-import Link from "next/link";
-import React, { useState } from "react";
+'use client';
+import Checkbox from '@/components/form/input/Checkbox';
+import Input from '@/components/form/input/InputField';
+import Label from '@/components/form/Label';
+import Button from '@/components/ui/button/Button';
+import { useAuth } from '@/context/AuthContext';
+import { ChevronLeftIcon, EyeCloseIcon, EyeIcon } from '@/icons';
+import { useRouter } from 'next/navigation';
+import Link from 'next/link';
+import React, { useState } from 'react';
 
 export default function SignInForm() {
   const [showPassword, setShowPassword] = useState(false);
   const [isChecked, setIsChecked] = useState(false);
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [error, setError] = useState('');
+  const [isLoggingIn, setIsLoggingIn] = useState(false);
+
+  const { login } = useAuth();
+  const router = useRouter();
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setError('');
+
+    if (!email || !password) {
+      setError('Por favor, ingresa tu email y contraseña');
+      return;
+    }
+
+    setIsLoggingIn(true);
+
+    try {
+      const success = await login(email, password);
+
+      if (success) {
+        router.push('/hotel-management'); // Redirigir a hotel-management después del login exitoso
+      } else {
+        setError('Credenciales incorrectas. Intenta con admin@test.com / admin123');
+      }
+    } catch (err) {
+      setError('Ocurrió un error al iniciar sesión');
+      console.error(err);
+    } finally {
+      setIsLoggingIn(false);
+    }
+  };
+
   return (
     <div className="flex flex-col flex-1">
       <div className="w-full max-w-md pt-10 mx-auto">
@@ -29,6 +66,10 @@ export default function SignInForm() {
             </h1>
             <p className="text-sm text-gray-500 dark:text-gray-400">
               Enter your email and password to sign in!
+            </p>
+            {error && <p className="mt-2 text-sm text-error-500">{error}</p>}
+            <p className="mt-2 text-xs text-brand-500">
+              Usuario de prueba: admin@test.com / admin123
             </p>
           </div>
           <div>
@@ -84,22 +125,28 @@ export default function SignInForm() {
                 </span>
               </div>
             </div>
-            <form>
+            <form onSubmit={handleSubmit}>
               <div className="space-y-6">
                 <div>
                   <Label>
-                    Email <span className="text-error-500">*</span>{" "}
+                    Email <span className="text-error-500">*</span>{' '}
                   </Label>
-                  <Input placeholder="info@gmail.com" />
+                  <Input
+                    placeholder="info@gmail.com"
+                    value={email}
+                    onChange={e => setEmail(e.target.value)}
+                  />
                 </div>
                 <div>
                   <Label>
-                    Password <span className="text-error-500">*</span>{" "}
+                    Password <span className="text-error-500">*</span>{' '}
                   </Label>
                   <div className="relative">
                     <Input
-                      type={showPassword ? "text" : "password"}
+                      type={showPassword ? 'text' : 'password'}
                       placeholder="Enter your password"
+                      value={password}
+                      onChange={e => setPassword(e.target.value)}
                     />
                     <span
                       onClick={() => setShowPassword(!showPassword)}
@@ -128,8 +175,8 @@ export default function SignInForm() {
                   </Link>
                 </div>
                 <div>
-                  <Button className="w-full" size="sm">
-                    Sign in
+                  <Button className="w-full" size="sm" type="submit" disabled={isLoggingIn}>
+                    {isLoggingIn ? 'Iniciando sesión...' : 'Sign in'}
                   </Button>
                 </div>
               </div>
@@ -137,7 +184,7 @@ export default function SignInForm() {
 
             <div className="mt-5">
               <p className="text-sm font-normal text-center text-gray-700 dark:text-gray-400 sm:text-start">
-                Don&apos;t have an account? {""}
+                Don&apos;t have an account? {''}
                 <Link
                   href="/signup"
                   className="text-brand-500 hover:text-brand-600 dark:text-brand-400"
