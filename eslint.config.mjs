@@ -9,8 +9,23 @@ const compat = new FlatCompat({
   baseDirectory: __dirname,
 });
 
-const eslintConfig = [
+// Configuración base que se usa siempre
+const baseConfig = [
   ...compat.extends("next/core-web-vitals", "next/typescript"),
 ];
+
+// Configuración adicional para CI
+const ciConfig = [
+  {
+    rules: {
+      "no-warning-comments": process.env.CI ? ["error", { 
+        terms: ["TODO", "FIXME"],
+        location: "anywhere"
+      }] : "off"
+    }
+  }
+];
+
+const eslintConfig = [...baseConfig, ...ciConfig];
 
 export default eslintConfig;
