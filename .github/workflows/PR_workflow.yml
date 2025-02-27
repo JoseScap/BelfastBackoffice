@@ -9,6 +9,8 @@ jobs:
   lint:
     name: Lint Check
     runs-on: ubuntu-latest
+    env:
+      CI: true
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -27,6 +29,7 @@ jobs:
 
   build:
     name: Build Check
+    needs: lint
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
