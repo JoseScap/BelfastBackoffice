@@ -9,8 +9,6 @@ export type RoomCategory = {
   images: string[];
 };
 
-// TODO: Add Room Type
-
 // Room Status
 export type RoomStatusValue = 'Limpieza' | 'Disponible' | 'No Disponible' | 'Mantenimiento';
 
