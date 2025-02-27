@@ -1,50 +1,82 @@
-"use client";
-import React from "react";
-import { useModal } from "../../hooks/useModal";
-import { Modal } from "../ui/modal";
-import Button from "../ui/button/Button";
-import Input from "../form/input/InputField";
-import Label from "../form/Label";
-import Image from "next/image";
+'use client';
+import React, { useState } from 'react';
+import { useModal } from '../../hooks/useModal';
+import { Modal } from '../ui/modal';
+import Button from '../ui/button/Button';
+import Input from '../form/input/InputField';
+import Label from '../form/Label';
+import Image from 'next/image';
+import { useAuth } from '@/context/AuthContext';
+import { toast } from 'react-hot-toast';
 
 export default function UserMetaCard() {
   const { isOpen, openModal, closeModal } = useModal();
-  const handleSave = () => {
-    // Handle save logic here
-    console.log("Saving changes...");
-    closeModal();
+  const { user, updateUserData, isLoading } = useAuth();
+
+  const [formData, setFormData] = useState({
+    firstName: user?.name?.split(' ')[0] || '',
+    lastName: user?.name?.split(' ')[1] || '',
+    facebook: 'https://www.facebook.com/PimjoHQ',
+    twitter: 'https://x.com/PimjoHQ',
+    linkedin: 'https://www.linkedin.com/company/pimjo',
+    instagram: 'https://instagram.com/PimjoHQ',
+  });
+
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const { name, value } = e.target;
+    setFormData(prev => ({
+      ...prev,
+      [name]: value,
+    }));
   };
+
+  const handleSave = async () => {
+    try {
+      const fullName = `${formData.firstName} ${formData.lastName}`.trim();
+
+      const success = await updateUserData({
+        name: fullName,
+      });
+
+      if (success) {
+        toast.success('Información actualizada correctamente');
+        closeModal();
+      } else {
+        toast.error('Error al actualizar la información');
+      }
+    } catch (error) {
+      toast.error('Ocurrió un error inesperado');
+      console.error(error);
+    }
+  };
+
   return (
     <>
       <div className="p-5 border border-gray-200 rounded-2xl dark:border-gray-800 lg:p-6">
         <div className="flex flex-col gap-5 xl:flex-row xl:items-center xl:justify-between">
           <div className="flex flex-col items-center w-full gap-6 xl:flex-row">
             <div className="w-20 h-20 overflow-hidden border border-gray-200 rounded-full dark:border-gray-800">
-              <Image
-                width={80}
-                height={80}
-                src="/images/user/owner.jpg"
-                alt="user"
-              />
+              <Image width={80} height={80} src="/images/user/owner.jpg" alt="user" />
             </div>
             <div className="order-3 xl:order-2">
               <h4 className="mb-2 text-lg font-semibold text-center text-gray-800 dark:text-white/90 xl:text-left">
-                Musharof Chowdhury
+                {user?.name || 'Usuario'}
               </h4>
               <div className="flex flex-col items-center gap-1 text-center xl:flex-row xl:gap-3 xl:text-left">
-                <p className="text-sm text-gray-500 dark:text-gray-400">
-                  Team Manager
-                </p>
+                <p className="text-sm text-gray-500 dark:text-gray-400">{user?.role || 'User'}</p>
                 <div className="hidden h-3.5 w-px bg-gray-300 dark:bg-gray-700 xl:block"></div>
                 <p className="text-sm text-gray-500 dark:text-gray-400">
-                  Arizona, United St
+                  {user?.city || 'Arizona, United St'}
                 </p>
               </div>
             </div>
             <div className="flex items-center order-2 gap-2 grow xl:order-3 xl:justify-end">
-              <a        
-        target="_blank"
-        rel="noreferrer" href='https://www.facebook.com/PimjoHQ' className="flex h-11 w-11 items-center justify-center gap-2 rounded-full border border-gray-300 bg-white text-sm font-medium text-gray-700 shadow-theme-xs hover:bg-gray-50 hover:text-gray-800 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-400 dark:hover:bg-white/[0.03] dark:hover:text-gray-200">
+              <a
+                target="_blank"
+                rel="noreferrer"
+                href="https://www.facebook.com/PimjoHQ"
+                className="flex h-11 w-11 items-center justify-center gap-2 rounded-full border border-gray-300 bg-white text-sm font-medium text-gray-700 shadow-theme-xs hover:bg-gray-50 hover:text-gray-800 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-400 dark:hover:bg-white/[0.03] dark:hover:text-gray-200"
+              >
                 <svg
                   className="fill-current"
                   width="20"
@@ -60,8 +92,12 @@ export default function UserMetaCard() {
                 </svg>
               </a>
 
-              <a href='https://x.com/PimjoHQ' target="_blank"
-        rel="noreferrer"  className="flex h-11 w-11 items-center justify-center gap-2 rounded-full border border-gray-300 bg-white text-sm font-medium text-gray-700 shadow-theme-xs hover:bg-gray-50 hover:text-gray-800 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-400 dark:hover:bg-white/[0.03] dark:hover:text-gray-200">
+              <a
+                href="https://x.com/PimjoHQ"
+                target="_blank"
+                rel="noreferrer"
+                className="flex h-11 w-11 items-center justify-center gap-2 rounded-full border border-gray-300 bg-white text-sm font-medium text-gray-700 shadow-theme-xs hover:bg-gray-50 hover:text-gray-800 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-400 dark:hover:bg-white/[0.03] dark:hover:text-gray-200"
+              >
                 <svg
                   className="fill-current"
                   width="20"
@@ -77,8 +113,12 @@ export default function UserMetaCard() {
                 </svg>
               </a>
 
-              <a href="https://www.linkedin.com/company/pimjo" target="_blank"
-        rel="noreferrer" className="flex h-11 w-11 items-center justify-center gap-2 rounded-full border border-gray-300 bg-white text-sm font-medium text-gray-700 shadow-theme-xs hover:bg-gray-50 hover:text-gray-800 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-400 dark:hover:bg-white/[0.03] dark:hover:text-gray-200">
+              <a
+                href="https://www.linkedin.com/company/pimjo"
+                target="_blank"
+                rel="noreferrer"
+                className="flex h-11 w-11 items-center justify-center gap-2 rounded-full border border-gray-300 bg-white text-sm font-medium text-gray-700 shadow-theme-xs hover:bg-gray-50 hover:text-gray-800 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-400 dark:hover:bg-white/[0.03] dark:hover:text-gray-200"
+              >
                 <svg
                   className="fill-current"
                   width="20"
@@ -94,8 +134,12 @@ export default function UserMetaCard() {
                 </svg>
               </a>
 
-              <a href='https://instagram.com/PimjoHQ' target="_blank"
-        rel="noreferrer" className="flex h-11 w-11 items-center justify-center gap-2 rounded-full border border-gray-300 bg-white text-sm font-medium text-gray-700 shadow-theme-xs hover:bg-gray-50 hover:text-gray-800 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-400 dark:hover:bg-white/[0.03] dark:hover:text-gray-200">
+              <a
+                href="https://instagram.com/PimjoHQ"
+                target="_blank"
+                rel="noreferrer"
+                className="flex h-11 w-11 items-center justify-center gap-2 rounded-full border border-gray-300 bg-white text-sm font-medium text-gray-700 shadow-theme-xs hover:bg-gray-50 hover:text-gray-800 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-400 dark:hover:bg-white/[0.03] dark:hover:text-gray-200"
+              >
                 <svg
                   className="fill-current"
                   width="20"
@@ -145,7 +189,13 @@ export default function UserMetaCard() {
               Update your details to keep your profile up-to-date.
             </p>
           </div>
-          <form className="flex flex-col">
+          <form
+            className="flex flex-col"
+            onSubmit={e => {
+              e.preventDefault();
+              handleSave();
+            }}
+          >
             <div className="custom-scrollbar h-[450px] overflow-y-auto px-2 pb-3">
               <div>
                 <h5 className="mb-5 text-lg font-medium text-gray-800 dark:text-white/90 lg:mb-6">
@@ -157,20 +207,29 @@ export default function UserMetaCard() {
                     <Label>Facebook</Label>
                     <Input
                       type="text"
-                      defaultValue="https://www.facebook.com/PimjoHQ"
+                      name="facebook"
+                      defaultValue={formData.facebook}
+                      onChange={handleChange}
                     />
                   </div>
 
                   <div>
                     <Label>X.com</Label>
-                    <Input type="text" defaultValue="https://x.com/PimjoHQ" />
+                    <Input
+                      type="text"
+                      name="twitter"
+                      defaultValue={formData.twitter}
+                      onChange={handleChange}
+                    />
                   </div>
 
                   <div>
                     <Label>Linkedin</Label>
                     <Input
                       type="text"
-                      defaultValue="https://www.linkedin.com/company/pimjo"
+                      name="linkedin"
+                      defaultValue={formData.linkedin}
+                      onChange={handleChange}
                     />
                   </div>
 
@@ -178,7 +237,9 @@ export default function UserMetaCard() {
                     <Label>Instagram</Label>
                     <Input
                       type="text"
-                      defaultValue="https://instagram.com/PimjoHQ"
+                      name="instagram"
+                      defaultValue={formData.instagram}
+                      onChange={handleChange}
                     />
                   </div>
                 </div>
@@ -191,27 +252,22 @@ export default function UserMetaCard() {
                 <div className="grid grid-cols-1 gap-x-6 gap-y-5 lg:grid-cols-2">
                   <div className="col-span-2 lg:col-span-1">
                     <Label>First Name</Label>
-                    <Input type="text" defaultValue="Musharof" />
+                    <Input
+                      type="text"
+                      name="firstName"
+                      defaultValue={formData.firstName}
+                      onChange={handleChange}
+                    />
                   </div>
 
                   <div className="col-span-2 lg:col-span-1">
                     <Label>Last Name</Label>
-                    <Input type="text" defaultValue="Chowdhury" />
-                  </div>
-
-                  <div className="col-span-2 lg:col-span-1">
-                    <Label>Email Address</Label>
-                    <Input type="text" defaultValue="randomuser@pimjo.com" />
-                  </div>
-
-                  <div className="col-span-2 lg:col-span-1">
-                    <Label>Phone</Label>
-                    <Input type="text" defaultValue="+09 363 398 46" />
-                  </div>
-
-                  <div className="col-span-2">
-                    <Label>Bio</Label>
-                    <Input type="text" defaultValue="Team Manager" />
+                    <Input
+                      type="text"
+                      name="lastName"
+                      defaultValue={formData.lastName}
+                      onChange={handleChange}
+                    />
                   </div>
                 </div>
               </div>
@@ -220,8 +276,8 @@ export default function UserMetaCard() {
               <Button size="sm" variant="outline" onClick={closeModal}>
                 Close
               </Button>
-              <Button size="sm" onClick={handleSave}>
-                Save Changes
+              <Button size="sm" disabled={isLoading} onClick={handleSave}>
+                {isLoading ? 'Saving...' : 'Save Changes'}
               </Button>
             </div>
           </form>

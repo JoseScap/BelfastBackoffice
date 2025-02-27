@@ -1,27 +1,46 @@
-import UserAddressCard from "@/components/user-profile/UserAddressCard";
-import UserInfoCard from "@/components/user-profile/UserInfoCard";
-import UserMetaCard from "@/components/user-profile/UserMetaCard";
-import { Metadata } from "next";
-import React from "react";
-
-export const metadata: Metadata = {
-  title: "Next.js Profile | TailAdmin - Next.js Dashboard Template",
-  description:
-    "This is Next.js Profile page for TailAdmin - Next.js Tailwind CSS Admin Dashboard Template",
-};
+'use client';
+import React, { useEffect } from 'react';
+import UserAddressCard from '@/components/user-profile/UserAddressCard';
+import UserInfoCard from '@/components/user-profile/UserInfoCard';
+import UserMetaCard from '@/components/user-profile/UserMetaCard';
+import { useAuth } from '@/context/AuthContext';
+import { useRouter } from 'next/navigation';
 
 export default function Profile() {
+  const { user, isLoading } = useAuth();
+  const router = useRouter();
+
+  useEffect(() => {
+    if (!isLoading && !user) {
+      router.push('/signin');
+    }
+  }, [user, isLoading, router]);
+
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="w-16 h-16 border-t-4 border-b-4 border-gray-900 rounded-full animate-spin"></div>
+      </div>
+    );
+  }
+
+  if (!user) {
+    return null;
+  }
+
   return (
-    <div>
-      <div className="rounded-2xl border border-gray-200 bg-white p-5 dark:border-gray-800 dark:bg-white/[0.03] lg:p-6">
-        <h3 className="mb-5 text-lg font-semibold text-gray-800 dark:text-white/90 lg:mb-7">
-          Profile
-        </h3>
-        <div className="space-y-6">
-          <UserMetaCard />
-          <UserInfoCard />
-          <UserAddressCard />
-        </div>
+    <div className="px-5 pt-5 pb-20 lg:pt-6 lg:pb-20 2xl:pt-10 2xl:pb-20">
+      <div className="mb-6 lg:mb-8">
+        <h4 className="mb-1 text-xl font-semibold text-gray-900 dark:text-white">Profile</h4>
+        <p className="text-sm font-medium text-gray-500 dark:text-gray-400">
+          Manage your personal information and preferences
+        </p>
+      </div>
+
+      <div className="grid grid-cols-1 gap-6 lg:gap-8">
+        <UserMetaCard />
+        <UserInfoCard />
+        <UserAddressCard />
       </div>
     </div>
   );
