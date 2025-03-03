@@ -13,7 +13,7 @@ export interface Employee {
 
 // Juan [NOTE, 2025-02-27] Servicio para manejar operaciones de empleados
 export class EmployeeService {
-  // Juan [NOTE, 2025-02-27] Método para obtener todos los empleados usando tRPC
+  // Juan [TOIMPLE, 2025-02-27] Implementar métodos con API real cuando se integre tRPC
   static async getAllEmployees(): Promise<Employee[]> {
     try {
       // Usamos el cliente mock de tRPC
@@ -90,4 +90,6 @@ export class EmployeeService {
       throw error;
     }
   }
+
+  // Juan [TOIMPLE, 2025-02-27] Implementar métodos adicionales como activar/desactivar empleados
 }

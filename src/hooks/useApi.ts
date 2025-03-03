@@ -1,8 +1,7 @@
 import { useState } from 'react';
 import { trpcClient } from '../api/trpc';
 
-// Juan [NOTE, 2025-02-27] Hook personalizado para usar tRPC
-// Este hook está preparado pero no se utilizará hasta que se decida integrar tRPC
+// Juan [TOIMPLE, 2025-02-27] Completar la implementación del hook cuando se integre tRPC
 export function useApi() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<Error | null>(null);
@@ -39,6 +38,7 @@ export function useApi() {
     return apiRequest(() => trpcClient.auth.login.mutate({ email }), 'Error al iniciar sesión');
   };
 
+  // Juan [TOIMPLE, 2025-02-27] Implementar registro con contraseña cuando se integre tRPC
   const register = (fullName: string, email: string) => {
     return apiRequest(
       () => trpcClient.auth.register.mutate({ fullName, email }),
@@ -57,6 +57,6 @@ export function useApi() {
     login,
     register,
     getProfile,
-    // Añadir más métodos según sea necesario
+    // Juan [TOIMPLE, 2025-02-27] Añadir más métodos para otras entidades (hoteles, habitaciones, etc.)
   };
 }
