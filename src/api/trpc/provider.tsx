@@ -19,7 +19,10 @@ export const trpc = createTRPCReact<AppRouter>();
 */
 
 // Cliente tRPC mock para desarrollo
-export const trpc = {} as any;
+export const trpc = {} as {
+  createClient: () => unknown;
+  Provider: React.FC<{ children: React.ReactNode; client: unknown; queryClient: unknown }>;
+};
 
 // Configuración por defecto para el QueryClient
 const defaultQueryClientConfig = {

@@ -35,16 +35,13 @@ export function useApi() {
   };
 
   // Autenticación
-  const login = (email: string, password: string) => {
-    return apiRequest(
-      () => trpcClient.auth.login.mutate({ email, password }),
-      'Error al iniciar sesión'
-    );
+  const login = (email: string) => {
+    return apiRequest(() => trpcClient.auth.login.mutate({ email }), 'Error al iniciar sesión');
   };
 
-  const register = (fullName: string, email: string, password: string) => {
+  const register = (fullName: string, email: string) => {
     return apiRequest(
-      () => trpcClient.auth.register.mutate({ fullName, email, password }),
+      () => trpcClient.auth.register.mutate({ fullName, email }),
       'Error al registrar usuario'
     );
   };

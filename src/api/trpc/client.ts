@@ -33,21 +33,13 @@ export const trpcClient = {
   },
   auth: {
     login: {
-      mutate: async ({ email, password }: { email: string; password: string }) => ({
+      mutate: async ({ email }: { email: string }) => ({
         token: 'mock-token',
         user: { id: '1', email, fullName: 'Usuario de Prueba', role: 'admin' },
       }),
     },
     register: {
-      mutate: async ({
-        fullName,
-        email,
-        password,
-      }: {
-        fullName: string;
-        email: string;
-        password: string;
-      }) => ({
+      mutate: async ({ fullName, email }: { fullName: string; email: string }) => ({
         token: 'mock-token',
         user: { id: '1', email, fullName, role: 'user' },
       }),
