@@ -5,8 +5,8 @@ import { useRouter } from 'next/navigation';
 // Definición de tipos para los roles de usuario
 export type UserRole = 'admin' | 'recepcion' | 'restaurant' | 'spa';
 
-// Interfaz para el usuario
-export interface User {
+// Tipo para el usuario
+export type User = {
   id: string;
   name: string;
   email: string;
@@ -16,10 +16,10 @@ export interface User {
   country?: string;
   city?: string;
   postalCode?: string;
-}
+};
 
-// Interfaz para actualizar datos del usuario
-export interface UserUpdateData {
+// Tipo para actualizar datos del usuario
+export type UserUpdateData = {
   name?: string;
   email?: string;
   phone?: string;
@@ -27,7 +27,7 @@ export interface UserUpdateData {
   country?: string;
   city?: string;
   postalCode?: string;
-}
+};
 
 // Interfaz para el contexto de autenticación
 interface AuthContextType {
