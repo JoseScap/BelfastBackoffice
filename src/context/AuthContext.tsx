@@ -29,15 +29,30 @@ export type UserUpdateData = {
   postalCode?: string;
 };
 
-// Interfaz para el contexto de autenticación
-interface AuthContextType {
+// Tipo para errores de autenticación
+export type AuthError = {
+  message: string;
+  code?: string;
+};
+
+// Tipo para el contexto de autenticación
+type AuthContextType = {
   user: User | null;
-  login: (email: string, password: string) => Promise<boolean>;
+  login: (email: string, password: string) => Promise<{ success: boolean; error?: AuthError }>;
   logout: () => void;
   updateUserData: (data: UserUpdateData) => Promise<boolean>;
   isAuthenticated: boolean;
   isLoading: boolean;
-}
+  loginAttempts: number;
+  isAccountLocked: boolean;
+  lockoutEndTime: Date | null;
+  resetLoginAttempts: () => void;
+};
+
+// Configuración de seguridad
+const MAX_LOGIN_ATTEMPTS = 5;
+const LOCKOUT_DURATION_MINUTES = 15;
+const CAPTCHA_THRESHOLD = 3;
 
 // Creación del contexto
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -59,6 +74,9 @@ const TEST_USER: User = {
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [loginAttempts, setLoginAttempts] = useState(0);
+  const [isAccountLocked, setIsAccountLocked] = useState(false);
+  const [lockoutEndTime, setLockoutEndTime] = useState<Date | null>(null);
   const router = useRouter();
 
   // Verificar si el usuario está autenticado al cargar la página
@@ -67,12 +85,92 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     if (storedUser) {
       setUser(JSON.parse(storedUser));
     }
+
+    // Recuperar información de intentos de login y bloqueo
+    const storedLoginAttempts = localStorage.getItem('loginAttempts');
+    const storedLockoutEndTime = localStorage.getItem('lockoutEndTime');
+
+    if (storedLoginAttempts) {
+      setLoginAttempts(parseInt(storedLoginAttempts, 10));
+    }
+
+    if (storedLockoutEndTime) {
+      const lockoutEnd = new Date(storedLockoutEndTime);
+      if (lockoutEnd > new Date()) {
+        setIsAccountLocked(true);
+        setLockoutEndTime(lockoutEnd);
+      } else {
+        // Si el tiempo de bloqueo ya pasó, resetear
+        localStorage.removeItem('lockoutEndTime');
+        localStorage.removeItem('loginAttempts');
+        setLoginAttempts(0);
+        setIsAccountLocked(false);
+        setLockoutEndTime(null);
+      }
+    }
+
     setIsLoading(false);
   }, []);
 
+  // Verificar si el tiempo de bloqueo ha terminado
+  useEffect(() => {
+    if (isAccountLocked && lockoutEndTime) {
+      const checkLockoutInterval = setInterval(() => {
+        if (lockoutEndTime < new Date()) {
+          setIsAccountLocked(false);
+          setLockoutEndTime(null);
+          setLoginAttempts(0);
+          localStorage.removeItem('lockoutEndTime');
+          localStorage.removeItem('loginAttempts');
+          clearInterval(checkLockoutInterval);
+        }
+      }, 10000); // Verificar cada 10 segundos
+
+      return () => clearInterval(checkLockoutInterval);
+    }
+  }, [isAccountLocked, lockoutEndTime]);
+
+  // Función para resetear los intentos de login
+  const resetLoginAttempts = () => {
+    setLoginAttempts(0);
+    localStorage.removeItem('loginAttempts');
+  };
+
+  // Función para bloquear la cuenta
+  const lockAccount = () => {
+    const lockoutEnd = new Date();
+    lockoutEnd.setMinutes(lockoutEnd.getMinutes() + LOCKOUT_DURATION_MINUTES);
+
+    setIsAccountLocked(true);
+    setLockoutEndTime(lockoutEnd);
+    localStorage.setItem('lockoutEndTime', lockoutEnd.toISOString());
+  };
+
   // Función para iniciar sesión
-  const login = async (email: string, password: string): Promise<boolean> => {
+  const login = async (
+    email: string,
+    password: string
+  ): Promise<{ success: boolean; error?: AuthError }> => {
     setIsLoading(true);
+
+    // Verificar si la cuenta está bloqueada
+    if (isAccountLocked) {
+      setIsLoading(false);
+      return {
+        success: false,
+        error: {
+          message: `Cuenta bloqueada temporalmente. Intente nuevamente después de ${lockoutEndTime?.toLocaleTimeString()}.`,
+          code: 'ACCOUNT_LOCKED',
+        },
+      };
+    }
+
+    // Verificar si se requiere captcha
+    if (loginAttempts >= CAPTCHA_THRESHOLD) {
+      // En un entorno real, aquí se verificaría el captcha
+      // Para este ejemplo, asumimos que el captcha es válido
+      console.log('Captcha requerido para este intento de inicio de sesión');
+    }
 
     // Simulación de una petición a un servidor
     return new Promise(resolve => {
@@ -81,11 +179,38 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         if (email === TEST_USER.email && password === 'admin123') {
           setUser(TEST_USER);
           localStorage.setItem('user', JSON.stringify(TEST_USER));
+          resetLoginAttempts();
           setIsLoading(false);
-          resolve(true);
+          resolve({ success: true });
         } else {
-          setIsLoading(false);
-          resolve(false);
+          // Incrementar contador de intentos fallidos
+          const newAttempts = loginAttempts + 1;
+          setLoginAttempts(newAttempts);
+          localStorage.setItem('loginAttempts', newAttempts.toString());
+
+          // Verificar si se debe bloquear la cuenta
+          if (newAttempts >= MAX_LOGIN_ATTEMPTS) {
+            lockAccount();
+            setIsLoading(false);
+            resolve({
+              success: false,
+              error: {
+                message: `Demasiados intentos fallidos. Cuenta bloqueada por ${LOCKOUT_DURATION_MINUTES} minutos.`,
+                code: 'MAX_ATTEMPTS_EXCEEDED',
+              },
+            });
+          } else {
+            setIsLoading(false);
+            resolve({
+              success: false,
+              error: {
+                message: `Credenciales incorrectas. Intentos restantes: ${
+                  MAX_LOGIN_ATTEMPTS - newAttempts
+                }.`,
+                code: 'INVALID_CREDENTIALS',
+              },
+            });
+          }
         }
       }, 1000); // Simular retraso de red
     });
@@ -128,6 +253,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         updateUserData,
         isAuthenticated: !!user,
         isLoading,
+        loginAttempts,
+        isAccountLocked,
+        lockoutEndTime,
+        resetLoginAttempts,
       }}
     >
       {children}
