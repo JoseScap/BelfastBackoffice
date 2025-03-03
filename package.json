@@ -35,6 +35,7 @@
     "react-dom": "^19.0.0",
     "react-dropzone": "^14.3.5",
     "react-flatpickr": "^3.10.13",
+    "react-hot-toast": "^2.5.2",
     "react-icons": "^5.5.0",
     "swiper": "^11.2.0",
     "tailwind-merge": "^2.6.0",
