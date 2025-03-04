@@ -13,7 +13,7 @@ export interface Employee {
 
 // Juan [NOTE, 2025-02-27] Servicio para manejar operaciones de empleados
 export class EmployeeService {
-  // Juan [TOIMPLE, 2025-02-27] Implementar métodos con API real cuando se integre tRPC
+  // Juan [TOIMPLE, 2025-02-27] Implementar métod0s con API real cuando se integre tRPC
   static async getAllEmployees(): Promise<Employee[]> {
     try {
       // Usamos el cliente mock de tRPC
@@ -26,7 +26,7 @@ export class EmployeeService {
     }
   }
 
-  // Juan [NOTE, 2025-02-27] Método para obtener un empleado por ID usando tRPC
+  // Juan [NOTE, 2025-02-27] Métod0 para obtener un empleado por ID usando tRPC
   static async getEmployeeById(id: string): Promise<Employee> {
     try {
       // Usamos el cliente mock de tRPC
@@ -45,7 +45,7 @@ export class EmployeeService {
     }
   }
 
-  // Juan [NOTE, 2025-02-27] Método para crear un empleado usando tRPC
+  // Juan [NOTE, 2025-02-27] Métod0 para crear un empleado usando tRPC
   static async createEmployee(employeeData: Omit<Employee, 'id'>): Promise<Employee> {
     try {
       // Usamos el cliente mock de tRPC
@@ -61,7 +61,7 @@ export class EmployeeService {
     }
   }
 
-  // Juan [NOTE, 2025-02-27] Método para actualizar un empleado usando tRPC
+  // Juan [NOTE, 2025-02-27] Métod0 para actualizar un empleado usando tRPC
   static async updateEmployee(id: string, employeeData: Partial<Employee>): Promise<Employee> {
     try {
       // Usamos el cliente mock de tRPC
@@ -80,7 +80,7 @@ export class EmployeeService {
     }
   }
 
-  // Juan [NOTE, 2025-02-27] Método para eliminar un empleado usando tRPC
+  // Juan [NOTE, 2025-02-27] Métod0 para eliminar un empleado usando tRPC
   static async deleteEmployee(id: string): Promise<void> {
     try {
       // Usamos el cliente mock de tRPC
@@ -91,5 +91,5 @@ export class EmployeeService {
     }
   }
 
-  // Juan [TOIMPLE, 2025-02-27] Implementar métodos adicionales como activar/desactivar empleados
+  // Juan [TOIMPLE, 2025-02-27] Implementar métod0s adicionales como activar/desactivar empleados
 }

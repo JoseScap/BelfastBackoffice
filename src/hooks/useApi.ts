@@ -57,6 +57,6 @@ export function useApi() {
     login,
     register,
     getProfile,
-    // Juan [TOIMPLE, 2025-02-27] Añadir más métodos para otras entidades (hoteles, habitaciones, etc.)
+    // Juan [TOIMPLE, 2025-02-27] Añadir más métod0s para otras entidades (hoteles, habitaciones, etc.)
   };
 }
