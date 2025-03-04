@@ -2,7 +2,9 @@
 // Este cliente está preparado pero no se utilizará hasta que se decida integrar tRPC
 // Por ahora, usamos un cliente mock para evitar errores de TypeScript
 
-// Cuando se decida integrar tRPC, descomentar este código:
+// Juan [TOIMPLE, 2025-02-27] Implementar cliente tRPC real cuando se decida usar en producción
+// Descomentar el código comentado y eliminar el cliente mock
+
 /*
 import { createTRPCProxyClient, httpBatchLink } from '@trpc/client';
 import type { AppRouter } from '../../types/trpc';
@@ -33,21 +35,13 @@ export const trpcClient = {
   },
   auth: {
     login: {
-      mutate: async ({ email, password }: { email: string; password: string }) => ({
+      mutate: async ({ email }: { email: string }) => ({
         token: 'mock-token',
         user: { id: '1', email, fullName: 'Usuario de Prueba', role: 'admin' },
       }),
     },
     register: {
-      mutate: async ({
-        fullName,
-        email,
-        password,
-      }: {
-        fullName: string;
-        email: string;
-        password: string;
-      }) => ({
+      mutate: async ({ fullName, email }: { fullName: string; email: string }) => ({
         token: 'mock-token',
         user: { id: '1', email, fullName, role: 'user' },
       }),

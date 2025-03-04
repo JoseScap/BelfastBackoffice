@@ -7,7 +7,7 @@ import { useAuth } from '@/context/AuthContext';
 import { ChevronLeftIcon, EyeCloseIcon, EyeIcon } from '@/icons';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 
 export default function SignInForm() {
   const [showPassword, setShowPassword] = useState(false);
@@ -16,9 +16,35 @@ export default function SignInForm() {
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [isLoggingIn, setIsLoggingIn] = useState(false);
+  const [showCaptcha, setShowCaptcha] = useState(false);
+  const [captchaValue, setCaptchaValue] = useState('');
 
-  const { login } = useAuth();
+  const { login, loginAttempts, isAccountLocked, lockoutEndTime } = useAuth();
   const router = useRouter();
+
+  // Mostrar captcha si hay demasiados intentos fallidos
+  useEffect(() => {
+    if (loginAttempts >= 3) {
+      setShowCaptcha(true);
+    }
+  }, [loginAttempts]);
+
+  // Generar un captcha simple (en un entorno real, usaríamos un servicio como reCAPTCHA)
+  const generateCaptcha = () => {
+    const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
+    let captcha = '';
+    for (let i = 0; i < 6; i++) {
+      captcha += chars.charAt(Math.floor(Math.random() * chars.length));
+    }
+    return captcha;
+  };
+
+  const [captchaText, setCaptchaText] = useState(generateCaptcha());
+
+  const refreshCaptcha = () => {
+    setCaptchaText(generateCaptcha());
+    setCaptchaValue('');
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -29,15 +55,42 @@ export default function SignInForm() {
       return;
     }
 
+    // Verificar captcha si es necesario
+    if (showCaptcha) {
+      if (!captchaValue) {
+        setError('Por favor, ingresa el código captcha');
+        return;
+      }
+      if (captchaValue !== captchaText) {
+        setError('Código captcha incorrecto');
+        refreshCaptcha();
+        return;
+      }
+    }
+
     setIsLoggingIn(true);
 
     try {
-      const success = await login(email, password);
+      const result = await login(email, password);
 
-      if (success) {
+      if (result.success) {
         router.push('/hotel-management'); // Redirigir a hotel-management después del login exitoso
       } else {
-        setError('Credenciales incorrectas. Intenta con admin@test.com / admin123');
+        // Mostrar el mensaje de error específico
+        setError(result.error?.message || 'Credenciales incorrectas');
+
+        // Si la cuenta está bloqueada, mostrar el tiempo restante
+        if (result.error?.code === 'ACCOUNT_LOCKED' && lockoutEndTime) {
+          const timeRemaining = Math.ceil(
+            (lockoutEndTime.getTime() - new Date().getTime()) / 60000
+          );
+          setError(`Cuenta bloqueada. Intente nuevamente en ${timeRemaining} minutos.`);
+        }
+
+        // Refrescar el captcha si se muestra
+        if (showCaptcha) {
+          refreshCaptcha();
+        }
       }
     } catch (err) {
       setError('Ocurrió un error al iniciar sesión');
@@ -71,6 +124,14 @@ export default function SignInForm() {
             <p className="mt-2 text-xs text-brand-500">
               Usuario de prueba: admin@test.com / admin123
             </p>
+            {loginAttempts > 0 && !isAccountLocked && (
+              <p className="mt-2 text-xs text-warning-500">Intentos fallidos: {loginAttempts}</p>
+            )}
+            {isAccountLocked && lockoutEndTime && (
+              <p className="mt-2 text-xs text-error-500">
+                Cuenta bloqueada hasta: {lockoutEndTime.toLocaleTimeString()}
+              </p>
+            )}
           </div>
           <div>
             <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 sm:gap-5">
@@ -135,6 +196,7 @@ export default function SignInForm() {
                     placeholder="info@gmail.com"
                     value={email}
                     onChange={e => setEmail(e.target.value)}
+                    disabled={isAccountLocked}
                   />
                 </div>
                 <div>
@@ -147,6 +209,7 @@ export default function SignInForm() {
                       placeholder="Enter your password"
                       value={password}
                       onChange={e => setPassword(e.target.value)}
+                      disabled={isAccountLocked}
                     />
                     <span
                       onClick={() => setShowPassword(!showPassword)}
@@ -160,6 +223,31 @@ export default function SignInForm() {
                     </span>
                   </div>
                 </div>
+
+                {showCaptcha && (
+                  <div>
+                    <Label>
+                      Captcha <span className="text-error-500">*</span>{' '}
+                    </Label>
+                    <div className="mb-2 p-3 bg-gray-100 dark:bg-gray-800 rounded-lg text-center">
+                      <span className="font-mono text-lg tracking-widest">{captchaText}</span>
+                      <button
+                        type="button"
+                        onClick={refreshCaptcha}
+                        className="ml-3 text-brand-500 hover:text-brand-600"
+                      >
+                        Refrescar
+                      </button>
+                    </div>
+                    <Input
+                      placeholder="Ingrese el código captcha"
+                      value={captchaValue}
+                      onChange={e => setCaptchaValue(e.target.value)}
+                      disabled={isAccountLocked}
+                    />
+                  </div>
+                )}
+
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-3">
                     <Checkbox checked={isChecked} onChange={setIsChecked} />
@@ -175,8 +263,17 @@ export default function SignInForm() {
                   </Link>
                 </div>
                 <div>
-                  <Button className="w-full" size="sm" type="submit" disabled={isLoggingIn}>
-                    {isLoggingIn ? 'Iniciando sesión...' : 'Sign in'}
+                  <Button
+                    className="w-full"
+                    size="sm"
+                    type="submit"
+                    disabled={isLoggingIn || isAccountLocked}
+                  >
+                    {isLoggingIn
+                      ? 'Iniciando sesión...'
+                      : isAccountLocked
+                      ? 'Cuenta bloqueada'
+                      : 'Sign in'}
                   </Button>
                 </div>
               </div>
