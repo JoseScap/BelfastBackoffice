@@ -12,7 +12,7 @@ import PendingCounter from '@/components/common/PendingCounter';
 import StatusCounter from '@/components/common/StatusCounter';
 
 // Tipo para las operaciones en cola
-interface QueuedOperation {
+type QueuedOperation = {
   id: string; // ID único para la operación
   roomId: string;
   newStatus: RoomStatusValue;
@@ -20,7 +20,7 @@ interface QueuedOperation {
   roomNumber: number;
   timestamp: number; // Timestamp para ordenar las operaciones
   status: 'pending' | 'loading' | 'success' | 'error'; // Estado de la operación
-}
+};
 
 // Componente para la tarjeta de habitación
 const RoomCard = ({
