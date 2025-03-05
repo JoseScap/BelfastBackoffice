@@ -8,6 +8,8 @@ import PageMetadata from '@/components/common/PageMetadata';
 import { getRoomStatusConfig } from '@/utils/statusColors';
 import { FloorSelect, DateSelect } from '@/components/common/SelectControls';
 import { toast } from 'react-hot-toast';
+import PendingCounter from '@/components/common/PendingCounter';
+import StatusCounter from '@/components/common/StatusCounter';
 
 // Tipo para las operaciones en cola
 interface QueuedOperation {
@@ -19,36 +21,6 @@ interface QueuedOperation {
   timestamp: number; // Timestamp para ordenar las operaciones
   status: 'pending' | 'loading' | 'success' | 'error'; // Estado de la operación
 }
-
-// Componente para mostrar el contador de operaciones pendientes
-const PendingCounter = ({ count }: { count: number }) => {
-  // Usar useRef para mantener el valor anterior
-  const prevCountRef = useRef(count);
-  const [isAnimating, setIsAnimating] = useState(false);
-
-  // Detectar cambios en el contador
-  useEffect(() => {
-    // Si el contador disminuye, animar
-    if (count < prevCountRef.current) {
-      setIsAnimating(true);
-      const timer = setTimeout(() => setIsAnimating(false), 500);
-      return () => clearTimeout(timer);
-    }
-    prevCountRef.current = count;
-  }, [count]);
-
-  if (count === 0) return null;
-
-  return (
-    <div className="text-sm text-gray-500 dark:text-gray-400 flex items-center">
-      <span
-        className={`transition-all duration-500 ${isAnimating ? 'text-green-500 scale-110' : ''}`}
-      >
-        {count} {count === 1 ? 'cambio' : 'cambios'} pendiente{count === 1 ? '' : 's'}
-      </span>
-    </div>
-  );
-};
 
 // Componente para la tarjeta de habitación
 const RoomCard = ({
@@ -117,21 +89,6 @@ const StatusColumn = ({
 }) => {
   const [isOver, setIsOver] = useState(false);
 
-  // Referencia para el contador anterior
-  const prevCountRef = useRef(pendingOperationsCount);
-  const [isCounterAnimating, setIsCounterAnimating] = useState(false);
-
-  // Detectar cambios en el contador
-  useEffect(() => {
-    // Si el contador disminuye, animar
-    if (pendingOperationsCount < prevCountRef.current) {
-      setIsCounterAnimating(true);
-      const timer = setTimeout(() => setIsCounterAnimating(false), 500);
-      return () => clearTimeout(timer);
-    }
-    prevCountRef.current = pendingOperationsCount;
-  }, [pendingOperationsCount]);
-
   // Funciones para manejar eventos de arrastre
   const handleDragOver = (e: React.DragEvent<HTMLDivElement>) => {
     e.preventDefault();
@@ -168,15 +125,7 @@ const StatusColumn = ({
           <span className="text-sm bg-white bg-opacity-20 px-2 py-1 rounded-full">
             {rooms.length}
           </span>
-          {pendingOperationsCount > 0 && (
-            <span
-              className={`flex h-5 w-5 items-center justify-center rounded-full text-xs text-white transition-all duration-300 ${
-                isCounterAnimating ? 'bg-green-500 scale-110' : 'bg-warning'
-              }`}
-            >
-              {pendingOperationsCount}
-            </span>
-          )}
+          <StatusCounter count={pendingOperationsCount} />
         </div>
       </h3>
 
