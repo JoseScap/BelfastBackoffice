@@ -25,7 +25,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
         <Backdrop />
         {/* Main Content Area */}
         <div className={`flex-1 transition-all duration-300 ease-in-out ${mainContentMargin}`}>
-          {/* Header */}
+          {/* Header  */}
           <AppHeader />
           {/* Page Content */}
           <div className="p-4 mx-auto bg-white max-w-screen-2xl md:p-6">{children}</div>
