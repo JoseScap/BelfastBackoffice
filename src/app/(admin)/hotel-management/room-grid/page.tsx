@@ -113,13 +113,11 @@ export default function RoomGridPage() {
   // Manejar el movimiento de habitaciones
   const handleMoveRoom = useCallback(
     (roomId: string, newStatus: RoomStatusValue) => {
-      console.log(`Moviendo habitación ${roomId} a ${newStatus}`);
-
       // Encontrar la habitación
       const roomToMove = rooms.find(room => room.id === roomId);
 
       if (!roomToMove) {
-        console.error('No se encontró la habitación');
+        toast.error('No se encontró la habitación');
         return;
       }
 
@@ -139,7 +137,7 @@ export default function RoomGridPage() {
       const roomIndex = newRooms.findIndex(room => room.id === roomId);
 
       if (roomIndex === -1) {
-        console.error('No se encontró la habitación en el array');
+        toast.error('Error al actualizar la habitación');
         return;
       }
 
