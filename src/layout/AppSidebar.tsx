@@ -111,8 +111,14 @@ const navItems: NavItem[] = [
       { name: 'Habitaciones', path: '/hotel-management/rooms', pro: false, new: true },
       { name: 'Reservas', path: '/hotel-management/reservations', pro: false, new: true },
       {
-        name: 'Cuadrícula de Habitaciones',
-        path: '/hotel-management/room-grid',
+        name: 'Estado de Habitaciones',
+        path: '/habitaciones/estado',
+        pro: false,
+        new: true,
+      },
+      {
+        name: 'Calendario de Stock',
+        path: '/habitaciones/stock',
         pro: false,
         new: true,
       },

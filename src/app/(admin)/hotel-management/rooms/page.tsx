@@ -131,16 +131,29 @@ const RoomsPage = () => {
             totalResults={filteredRooms.length}
           />
 
-          <button
-            onClick={handleCreateRoom}
-            className="flex items-center gap-2 rounded-md bg-primary py-2 px-4.5 font-medium text-white hover:bg-opacity-80 focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2"
-            aria-label="Crear nueva habitación"
-          >
-            <IconWrapper className="fill-white">
-              <DashboardIcons.Hotel />
-            </IconWrapper>
-            Nueva Habitación
-          </button>
+          <div className="flex items-center gap-3">
+            <a
+              href="/habitaciones/stock"
+              className="flex items-center gap-2 rounded-md border border-primary py-2 px-4 font-medium text-primary hover:bg-primary hover:text-white focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2"
+              aria-label="Ir al calendario de stock"
+            >
+              <IconWrapper className="fill-current">
+                <DashboardIcons.Calendar />
+              </IconWrapper>
+              Calendario de Stock
+            </a>
+
+            <button
+              onClick={handleCreateRoom}
+              className="flex items-center gap-2 rounded-md bg-primary py-2 px-4 font-medium text-white hover:bg-opacity-80 focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2"
+              aria-label="Crear nueva habitación"
+            >
+              <IconWrapper className="fill-white">
+                <DashboardIcons.Hotel />
+              </IconWrapper>
+              Nueva Habitación
+            </button>
+          </div>
         </div>
 
         <div className="rounded-sm border border-stroke bg-white px-5 pb-2.5 pt-6 shadow-default dark:border-strokedark dark:bg-boxdark sm:px-7.5 xl:pb-1">

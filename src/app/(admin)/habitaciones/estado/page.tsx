@@ -215,7 +215,7 @@ const generateId = () => {
   return Math.random().toString(36).substring(2, 9);
 };
 
-export default function RoomGridPage() {
+export default function EstadoHabitacionesPage() {
   const [selectedFloor, setSelectedFloor] = useState<number | null>(null);
   const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split('T')[0]);
   const [rooms, setRooms] = useState<Room[]>(mockRooms);
@@ -386,10 +386,10 @@ export default function RoomGridPage() {
   return (
     <>
       <PageMetadata
-        title="Cuadrícula de Habitaciones | Belfast Backoffice"
-        description="Gestión visual de habitaciones para Belfast Backoffice"
+        title="Estado de Habitaciones | Belfast Backoffice"
+        description="Gestión visual del estado de habitaciones para Belfast Backoffice"
       />
-      <PageBreadcrumb pageTitle="Cuadrícula de Habitaciones" />
+      <PageBreadcrumb pageTitle="Estado de Habitaciones" />
 
       <div className="flex flex-col gap-5 md:gap-7 2xl:gap-10">
         {/* Controls */}

@@ -1,56 +1,82 @@
-"use client";
-import React from "react";
-import Badge from "../ui/badge/Badge";
-import { ArrowDownIcon, ArrowUpIcon, BoxIconLine, GroupIcon } from "@/icons";
+'use client';
+import { FaHotel, FaUsers, FaMoneyBillWave, FaPercentage } from 'react-icons/fa';
 
-export const EcommerceMetrics = () => {
+export default function HotelMetrics() {
   return (
-    <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 md:gap-6">
-      {/* <!-- Metric Item Start --> */}
-      <div className="rounded-2xl border border-gray-200 bg-white p-5 dark:border-gray-800 dark:bg-white/[0.03] md:p-6">
-        <div className="flex items-center justify-center w-12 h-12 bg-gray-100 rounded-xl dark:bg-gray-800">
-          <GroupIcon className="text-gray-800 size-6 dark:text-white/90" />
+    <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 xl:grid-cols-4">
+      {/* Ocupación */}
+      <div className="rounded-2xl border border-gray-200 bg-white p-5 dark:border-gray-800 dark:bg-white/[0.03] sm:p-6">
+        <div className="flex items-center justify-between">
+          <h3 className="text-sm font-medium text-gray-500 dark:text-gray-400">Ocupación</h3>
         </div>
 
-        <div className="flex items-end justify-between mt-5">
+        <div className="mt-5 flex items-center justify-between">
           <div>
-            <span className="text-sm text-gray-500 dark:text-gray-400">
-              Customers
-            </span>
-            <h4 className="mt-2 font-bold text-gray-800 text-title-sm dark:text-white/90">
-              3,782
-            </h4>
-          </div>
-          <Badge color="success">
-            <ArrowUpIcon />
-            11.01%
-          </Badge>
-        </div>
-      </div>
-      {/* <!-- Metric Item End --> */}
-
-      {/* <!-- Metric Item Start --> */}
-      <div className="rounded-2xl border border-gray-200 bg-white p-5 dark:border-gray-800 dark:bg-white/[0.03] md:p-6">
-        <div className="flex items-center justify-center w-12 h-12 bg-gray-100 rounded-xl dark:bg-gray-800">
-          <BoxIconLine className="text-gray-800 dark:text-white/90" />
-        </div>
-        <div className="flex items-end justify-between mt-5">
-          <div>
-            <span className="text-sm text-gray-500 dark:text-gray-400">
-              Orders
-            </span>
-            <h4 className="mt-2 font-bold text-gray-800 text-title-sm dark:text-white/90">
-              5,359
-            </h4>
+            <h4 className="text-2xl font-semibold text-gray-900 dark:text-white">85%</h4>
+            <p className="mt-1 text-sm text-green-600 dark:text-green-500">+5.2% vs mes anterior</p>
           </div>
 
-          <Badge color="error">
-            <ArrowDownIcon className="text-error-500" />
-            9.05%
-          </Badge>
+          <div className="flex h-12 w-12 items-center justify-center rounded-full bg-blue-50 dark:bg-blue-900/20">
+            <FaPercentage className="h-5 w-5 text-blue-600 dark:text-blue-500" />
+          </div>
         </div>
       </div>
-      {/* <!-- Metric Item End --> */}
+
+      {/* Habitaciones Disponibles */}
+      <div className="rounded-2xl border border-gray-200 bg-white p-5 dark:border-gray-800 dark:bg-white/[0.03] sm:p-6">
+        <div className="flex items-center justify-between">
+          <h3 className="text-sm font-medium text-gray-500 dark:text-gray-400">
+            Habitaciones Disponibles
+          </h3>
+        </div>
+
+        <div className="mt-5 flex items-center justify-between">
+          <div>
+            <h4 className="text-2xl font-semibold text-gray-900 dark:text-white">12</h4>
+            <p className="mt-1 text-sm text-red-600 dark:text-red-500">-3 vs mes anterior</p>
+          </div>
+
+          <div className="flex h-12 w-12 items-center justify-center rounded-full bg-indigo-50 dark:bg-indigo-900/20">
+            <FaHotel className="h-5 w-5 text-indigo-600 dark:text-indigo-500" />
+          </div>
+        </div>
+      </div>
+
+      {/* Huéspedes */}
+      <div className="rounded-2xl border border-gray-200 bg-white p-5 dark:border-gray-800 dark:bg-white/[0.03] sm:p-6">
+        <div className="flex items-center justify-between">
+          <h3 className="text-sm font-medium text-gray-500 dark:text-gray-400">Huéspedes</h3>
+        </div>
+
+        <div className="mt-5 flex items-center justify-between">
+          <div>
+            <h4 className="text-2xl font-semibold text-gray-900 dark:text-white">124</h4>
+            <p className="mt-1 text-sm text-green-600 dark:text-green-500">+12 vs mes anterior</p>
+          </div>
+
+          <div className="flex h-12 w-12 items-center justify-center rounded-full bg-green-50 dark:bg-green-900/20">
+            <FaUsers className="h-5 w-5 text-green-600 dark:text-green-500" />
+          </div>
+        </div>
+      </div>
+
+      {/* Ingresos */}
+      <div className="rounded-2xl border border-gray-200 bg-white p-5 dark:border-gray-800 dark:bg-white/[0.03] sm:p-6">
+        <div className="flex items-center justify-between">
+          <h3 className="text-sm font-medium text-gray-500 dark:text-gray-400">Ingresos</h3>
+        </div>
+
+        <div className="mt-5 flex items-center justify-between">
+          <div>
+            <h4 className="text-2xl font-semibold text-gray-900 dark:text-white">$52,450</h4>
+            <p className="mt-1 text-sm text-green-600 dark:text-green-500">+8.4% vs mes anterior</p>
+          </div>
+
+          <div className="flex h-12 w-12 items-center justify-center rounded-full bg-amber-50 dark:bg-amber-900/20">
+            <FaMoneyBillWave className="h-5 w-5 text-amber-600 dark:text-amber-500" />
+          </div>
+        </div>
+      </div>
     </div>
   );
-};
+}

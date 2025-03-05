@@ -1,42 +1,39 @@
-import type { Metadata } from "next";
-import { EcommerceMetrics } from "@/components/ecommerce/EcommerceMetrics";
-import React from "react";
-import MonthlyTarget from "@/components/ecommerce/MonthlyTarget";
-import MonthlySalesChart from "@/components/ecommerce/MonthlySalesChart";
-import StatisticsChart from "@/components/ecommerce/StatisticsChart";
-import RecentOrders from "@/components/ecommerce/RecentOrders";
-import DemographicCard from "@/components/ecommerce/DemographicCard";
+'use client';
+import HotelMetrics from '@/components/ecommerce/EcommerceMetrics';
+import StatisticsChart from '@/components/ecommerce/StatisticsChart';
+import MonthlyTarget from '@/components/ecommerce/MonthlyTarget';
+import RecentReservations from '@/components/ecommerce/RecentOrders';
 
-export const metadata: Metadata = {
-  title:
-    "Next.js E-commerce Dashboard | TailAdmin - Next.js Dashboard Template",
-  description: "This is Next.js Home for TailAdmin Dashboard Template",
-};
-
-export default function Ecommerce() {
+export default function Dashboard() {
   return (
-    <div className="grid grid-cols-12 gap-4 md:gap-6">
-      <div className="col-span-12 space-y-6 xl:col-span-7">
-        <EcommerceMetrics />
-
-        <MonthlySalesChart />
+    <div className="flex flex-col gap-5 p-4 md:p-6 2xl:p-10">
+      <div className="flex flex-col gap-2">
+        <h2 className="text-2xl font-bold text-gray-800 dark:text-white/90">
+          Dashboard de Gestión Hotelera
+        </h2>
+        <p className="text-gray-500 dark:text-gray-400">
+          Bienvenido al panel de control del sistema de gestión hotelera. Aquí podrás ver las
+          estadísticas y métricas más importantes.
+        </p>
       </div>
 
-      <div className="col-span-12 xl:col-span-5">
-        <MonthlyTarget />
+      {/* Hotel Metrics */}
+      <HotelMetrics />
+
+      <div className="grid grid-cols-1 gap-5 xl:grid-cols-3">
+        {/* Statistics Chart */}
+        <div className="xl:col-span-2">
+          <StatisticsChart />
+        </div>
+
+        {/* Monthly Target */}
+        <div>
+          <MonthlyTarget />
+        </div>
       </div>
 
-      <div className="col-span-12">
-        <StatisticsChart />
-      </div>
-
-      <div className="col-span-12 xl:col-span-5">
-        <DemographicCard />
-      </div>
-
-      <div className="col-span-12 xl:col-span-7">
-        <RecentOrders />
-      </div>
+      {/* Recent Reservations */}
+      <RecentReservations />
     </div>
   );
 }

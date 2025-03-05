@@ -119,9 +119,9 @@ const HotelManagementDashboard = () => {
       showRoomStats: false,
     },
     {
-      title: 'Cuadrícula de Habitaciones',
-      description: 'Ver calendario de disponibilidad',
-      path: '/hotel-management/room-grid',
+      title: 'Estado de Habitaciones',
+      description: 'Ver y gestionar estados de habitaciones',
+      path: '/habitaciones/estado',
       icon: (
         <IconWrapper className="fill-primary dark:fill-white mx-auto">
           <DashboardIcons.List />
