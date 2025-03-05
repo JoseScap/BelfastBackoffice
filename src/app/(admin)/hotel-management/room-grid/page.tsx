@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState, useMemo, useRef, useCallback, useEffect } from 'react';
+import { v4 as uuidv4 } from 'uuid';
 import PageBreadcrumb from '@/components/common/PageBreadCrumb';
 import { mockRooms } from '@/mock-data';
 import { ROOM_STATUS, Room, RoomStatusValue } from '@/types/hotel';
@@ -20,11 +21,6 @@ type QueuedOperation = {
   roomNumber: number;
   timestamp: number; // Timestamp para ordenar las operaciones
   status: 'pending' | 'loading' | 'success' | 'error'; // Estado de la operación
-};
-
-// Generar un ID único
-const generateId = () => {
-  return Math.random().toString(36).substring(2, 9);
 };
 
 export default function RoomGridPage() {
@@ -163,7 +159,7 @@ export default function RoomGridPage() {
       setRooms(newRooms);
 
       // Crear ID único para la operación
-      const operationId = generateId();
+      const operationId = uuidv4();
 
       // Añadir operación a la cola con ID único
       const newOperation: QueuedOperation = {
