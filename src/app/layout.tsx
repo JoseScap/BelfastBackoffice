@@ -26,7 +26,7 @@ export default function RootLayout({
           <AuthProvider>
             <SidebarProvider>
               {children}
-              <Toaster position="top-right" />
+              <Toaster position="bottom-right" />
             </SidebarProvider>
           </AuthProvider>
         </ThemeProvider>

@@ -8,11 +8,24 @@ const getRandomItem = <T>(array: T[]): T => {
   return array[Math.floor(Math.random() * array.length)];
 };
 
-// Generate 20 mock rooms
-export const mockRooms: Room[] = Array.from({ length: 20 }, (_, index) => {
-  const floor = Math.floor(index / 5) + 1; // 5 rooms per floor, 4 floors
-  const roomNumber = floor * 100 + (index % 5) + 1; // Room numbers like 101, 102, 201, 202, etc.
-  
+// Generate 60 mock rooms (15 rooms per floor, 4 floors)
+export const mockRooms: Room[] = Array.from({ length: 60 }, (_, index) => {
+  const floor = Math.floor(index / 15) + 1; // 15 rooms per floor, 4 floors
+  const roomNumber = floor * 100 + (index % 15) + 1; // Room numbers like 101, 102, ..., 115, 201, 202, etc.
+
+  // Distribute room statuses more evenly
+  let status;
+  const statusIndex = index % 4; // 0, 1, 2, 3
+  if (statusIndex === 0) {
+    status = mockRoomStatuses[0]; // Cleaning
+  } else if (statusIndex === 1) {
+    status = mockRoomStatuses[1]; // Available
+  } else if (statusIndex === 2) {
+    status = mockRoomStatuses[2]; // Unavailable
+  } else {
+    status = mockRoomStatuses[3]; // Maintenance
+  }
+
   return {
     id: uuidv4(),
     number: roomNumber,
@@ -25,6 +38,6 @@ export const mockRooms: Room[] = Array.from({ length: 20 }, (_, index) => {
       king: Math.floor(Math.random() * 2), // 0-1 king beds
     },
     category: getRandomItem(mockRoomCategories),
-    status: getRandomItem(mockRoomStatuses),
+    status: status,
   };
-}); 
+});
