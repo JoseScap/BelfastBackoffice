@@ -96,7 +96,7 @@ const othersItems: NavItem[] = [
 ];
 */
 
-// Nuevos elementos de navegación para la gestión hotelera
+// New navigation items for hotel management
 const navItems: NavItem[] = [
   // {
   //   icon: <GridIcon />,
@@ -105,14 +105,20 @@ const navItems: NavItem[] = [
   // },
   {
     icon: <BoxCubeIcon />,
-    name: 'Gestión Hotelera',
+    name: 'Hotel Management',
     subItems: [
-      { name: 'Panel Principal', path: '/hotel-management', pro: false },
+      { name: 'Dashboard', path: '/hotel-management', pro: false },
       { name: 'Habitaciones', path: '/hotel-management/rooms', pro: false, new: true },
       { name: 'Reservas', path: '/hotel-management/reservations', pro: false, new: true },
       {
-        name: 'Cuadrícula de Habitaciones',
-        path: '/hotel-management/room-grid',
+        name: 'Estado de Habitaciones',
+        path: '/habitaciones/estado',
+        pro: false,
+        new: true,
+      },
+      {
+        name: 'Calendario de Stock',
+        path: '/habitaciones/stock',
         pro: false,
         new: true,
       },

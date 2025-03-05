@@ -98,3 +98,13 @@ export type PendingAppointment = Omit<Appointment, 'room' | 'status'> & {
   roomCategory: RoomCategory;
   ttl: string; // ISO date string when this pending reservation expires
 };
+
+// Room Stock Calendar
+export type RoomStock = {
+  id: string;
+  categoryId: string;
+  startDate: Date;
+  endDate: Date;
+  price: number;
+  availableRooms: number;
+};

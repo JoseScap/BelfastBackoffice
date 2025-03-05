@@ -128,40 +128,43 @@ const PendingRequestsPage = () => {
           </div>
 
           <div className="border-t border-stroke px-4 pb-6 pt-4 dark:border-strokedark sm:px-6 xl:px-7.5">
-            <div className="flex flex-col">
-              <div className="grid rounded-sm bg-gray-2 dark:bg-meta-4 sm:grid-cols-6">
-                {TABLE_HEADERS.map(header => (
-                  <div
-                    key={header.key}
-                    className="p-2.5 text-left"
-                    style={{ minWidth: header.minWidth }}
+            <table className="w-full">
+              <thead>
+                <tr className="grid rounded-sm bg-gray-2 dark:bg-meta-4 sm:grid-cols-6">
+                  {TABLE_HEADERS.map(header => (
+                    <th
+                      key={header.key}
+                      className="p-2.5 text-left"
+                      style={{ minWidth: header.minWidth }}
+                    >
+                      <h5 className="font-medium uppercase xsm:text-base">{header.label}</h5>
+                    </th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody>
+                {filteredAppointments.map(appointment => (
+                  <tr
+                    key={appointment.id}
+                    className="grid w-full border-b border-stroke dark:border-strokedark sm:grid-cols-6"
                   >
-                    <h5 className="font-medium uppercase xsm:text-base">{header.label}</h5>
-                  </div>
+                    <GuestCell
+                      firstName={appointment.guest.firstName}
+                      lastName={appointment.guest.lastName}
+                      email={appointment.guest.email}
+                    />
+                    <RoomCell
+                      number={appointment.room.number}
+                      categoryName={appointment.room.category.name}
+                    />
+                    <DateCell date={appointment.checkInDate} />
+                    <DateCell date={appointment.checkOutDate} />
+                    <PriorityCell priority="high" />
+                    <ActionsCell />
+                  </tr>
                 ))}
-              </div>
-
-              {filteredAppointments.map(appointment => (
-                <div
-                  key={appointment.id}
-                  className="grid w-full border-b border-stroke dark:border-strokedark sm:grid-cols-6"
-                >
-                  <GuestCell
-                    firstName={appointment.guest.firstName}
-                    lastName={appointment.guest.lastName}
-                    email={appointment.guest.email}
-                  />
-                  <RoomCell
-                    number={appointment.room.number}
-                    categoryName={appointment.room.category.name}
-                  />
-                  <DateCell date={appointment.checkInDate} />
-                  <DateCell date={appointment.checkOutDate} />
-                  <PriorityCell priority="high" />
-                  <ActionsCell />
-                </div>
-              ))}
-            </div>
+              </tbody>
+            </table>
 
             {totalPages > 1 && (
               <div className="mt-4 flex justify-end">
