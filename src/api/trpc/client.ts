@@ -5,32 +5,40 @@
 // Juan [TOIMPLE, 2025-02-27] Implementar cliente tRPC real cuando se decida usar en producción
 // Descomentar el código comentado y eliminar el cliente mock
 
-/*
 import { createTRPCProxyClient, httpBatchLink } from '@trpc/client';
-import type { AppRouter } from '../../types/trpc';
+import type { AppRouter, ApiStructure } from '../../types/trpc';
 import { TRPC_URL } from '../config';
 
+// Creamos el cliente tRPC con el tipo AppRouter
+// Este cliente se usará para hacer peticiones al backend
 export const trpcClient = createTRPCProxyClient<AppRouter>({
   links: [
     httpBatchLink({
       url: TRPC_URL,
-      // Añadimos headers para autenticación si es necesario
-      headers: () => {
+      // Configuración de headers para autenticación
+      headers() {
+        // Solo enviamos el token si existe
         const token = typeof localStorage !== 'undefined' ? localStorage.getItem('token') : null;
+
+        // Si no hay token, no enviamos el encabezado Authorization
+        if (!token) {
+          return {};
+        }
+
         return {
-          Authorization: token ? `Bearer ${token}` : '',
+          Authorization: `Bearer ${token}`,
         };
       },
     }),
   ],
 });
-*/
 
-// Cliente mock para desarrollo
-export const trpcClient = {
+// Cliente mock para desarrollo - Mantenemos como fallback en caso de error de conexión
+// Este cliente implementa la misma interfaz que el cliente real pero con datos mock
+export const mockTrpcClient: ApiStructure = {
   status: {
-    health: {
-      query: async () => ({ status: 'ok' }),
+    ping: {
+      query: async () => 'pong',
     },
   },
   auth: {
@@ -81,10 +89,16 @@ export const trpcClient = {
   },
   rooms: {
     create: { mutate: async () => ({}) },
-    getAll: { query: async () => [] },
+    getByFilter: { query: async () => [] },
     getById: { query: async () => ({}) },
+    getAllFloors: { query: async () => [] },
+    getAllSectors: { query: async () => [] },
     update: { mutate: async () => ({}) },
+    updateStatus: { mutate: async () => ({}) },
     delete: { mutate: async () => ({}) },
-    activate: { mutate: async () => ({}) },
+    restore: { mutate: async () => ({}) },
+  },
+  roomStatus: {
+    getAll: { query: async () => [] },
   },
 };

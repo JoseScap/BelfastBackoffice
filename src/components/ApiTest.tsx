@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { trpcClient } from '../api/trpc';
+import { mockTrpcClient } from '../api/trpc/client';
 
 // Juan [NOTE, 2025-02-27] Componente de prueba para verificar la conexión con el backend
 // Este componente está preparado pero no se utilizará hasta que se decida integrar tRPC
@@ -15,8 +15,8 @@ export default function ApiTest() {
     setError(null);
     try {
       // Llamada a la API usando tRPC
-      const result = await trpcClient.status.health.query();
-      setStatus(result.status);
+      const result = await mockTrpcClient.status.ping.query();
+      setStatus(result);
     } catch (err) {
       console.error('Error al verificar el estado del backend:', err);
       setError('Error al conectar con el backend. Verifica la consola para más detalles.');

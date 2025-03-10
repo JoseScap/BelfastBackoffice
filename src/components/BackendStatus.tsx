@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { trpcClient } from '../api/trpc';
+import { mockTrpcClient } from '../api/trpc/client';
 
 // Juan [NOTE, 2025-02-27] Componente para mostrar el estado del backend
 // Este componente está preparado pero no se utilizará hasta que se decida integrar tRPC
@@ -12,7 +12,7 @@ export default function BackendStatus() {
     const checkBackendStatus = async () => {
       try {
         // Llamada a la API usando tRPC
-        await trpcClient.status.health.query();
+        await mockTrpcClient.status.ping.query();
         setStatus('online');
       } catch (error) {
         console.error('Error al verificar el estado del backend:', error);

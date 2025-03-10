@@ -8,6 +8,8 @@ import { SidebarProvider } from '@/context/SidebarContext';
 import { ThemeProvider } from '@/context/ThemeContext';
 import { AuthProvider } from '@/context/AuthContext';
 import { Toaster } from 'react-hot-toast';
+import { TRPCProvider } from '@/api/trpc/provider';
+import BackendConnectionStatus from '@/components/common/BackendConnectionStatus';
 
 const outfit = Outfit({
   variable: '--font-outfit-sans',
@@ -25,8 +27,11 @@ export default function RootLayout({
         <ThemeProvider>
           <AuthProvider>
             <SidebarProvider>
-              {children}
-              <Toaster position="bottom-right" />
+              <TRPCProvider>
+                {children}
+                <BackendConnectionStatus />
+                <Toaster position="bottom-right" />
+              </TRPCProvider>
             </SidebarProvider>
           </AuthProvider>
         </ThemeProvider>

@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { trpcClient } from '../api/trpc';
+import { mockTrpcClient } from '../api/trpc/client';
 
 // Juan [TOIMPLE, 2025-02-27] Completar la implementación del hook cuando se integre tRPC
 export function useApi() {
@@ -28,26 +28,29 @@ export function useApi() {
   // Verificar el estado del backend
   const checkHealth = () => {
     return apiRequest(
-      () => trpcClient.status.health.query(),
+      () => mockTrpcClient.status.ping.query(),
       'Error al verificar el estado del backend'
     );
   };
 
   // Autenticación
   const login = (email: string) => {
-    return apiRequest(() => trpcClient.auth.login.mutate({ email }), 'Error al iniciar sesión');
+    return apiRequest(() => mockTrpcClient.auth.login.mutate({ email }), 'Error al iniciar sesión');
   };
 
   // Juan [TOIMPLE, 2025-02-27] Implementar registro con contraseña cuando se integre tRPC
   const register = (fullName: string, email: string) => {
     return apiRequest(
-      () => trpcClient.auth.register.mutate({ fullName, email }),
+      () => mockTrpcClient.auth.register.mutate({ fullName, email }),
       'Error al registrar usuario'
     );
   };
 
   const getProfile = () => {
-    return apiRequest(() => trpcClient.auth.profile.query(), 'Error al obtener perfil de usuario');
+    return apiRequest(
+      () => mockTrpcClient.auth.profile.query(),
+      'Error al obtener perfil de usuario'
+    );
   };
 
   return {

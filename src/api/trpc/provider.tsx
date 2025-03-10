@@ -6,20 +6,14 @@ import { useState } from 'react';
 // Juan [TOIMPLE, 2025-02-27] Integrar completamente tRPC cuando se decida usar en producción
 // Descomentar el código comentado y eliminar el cliente mock
 
-/*
 import { httpBatchLink } from '@trpc/client';
 import { createTRPCReact } from '@trpc/react-query';
 import type { AppRouter } from '../../types/trpc';
 import { TRPC_URL } from '../config';
 
+// Creamos el cliente tRPC para React
+// Este cliente se usará para hacer peticiones al backend desde componentes React
 export const trpc = createTRPCReact<AppRouter>();
-*/
-
-// Cliente tRPC mock para desarrollo
-export const trpc = {} as {
-  createClient: () => unknown;
-  Provider: React.FC<{ children: React.ReactNode; client: unknown; queryClient: unknown }>;
-};
 
 // Configuración por defecto para el QueryClient
 const defaultQueryClientConfig = {
@@ -36,35 +30,17 @@ const defaultQueryClientConfig = {
   },
 };
 
+// Exportamos un objeto vacío para evitar errores de compilación
+// Este objeto se reemplazará por el cliente tRPC real cuando se implemente
+export const trpcReact = {
+  Provider: ({ children }: { children: React.ReactNode }) => <>{children}</>,
+};
+
 // Juan [NOTE, 2025-02-27] Proveedor de tRPC para React
 export function TRPCProvider({ children }: { children: React.ReactNode }) {
   const [queryClient] = useState(() => new QueryClient(defaultQueryClientConfig));
 
-  // Juan [TOIMPLE, 2025-02-27] Implementar el proveedor real de tRPC
-  /*
-  const [trpcClient] = useState(() =>
-    trpc.createClient({
-      links: [
-        httpBatchLink({
-          url: TRPC_URL,
-          headers: () => {
-            const token =
-              typeof localStorage !== 'undefined' ? localStorage.getItem('token') : null;
-            return {
-              Authorization: token ? `Bearer ${token}` : '',
-            };
-          },
-        }),
-      ],
-    })
-  );
-
-  return (
-    <trpc.Provider client={trpcClient} queryClient={queryClient}>
-      <QueryClientProvider client={queryClient}>{children}</QueryClientProvider>
-    </trpc.Provider>
-  );
-  */
-
+  // Por ahora, solo usamos el QueryClientProvider
+  // La integración completa con tRPC se hará más adelante
   return <QueryClientProvider client={queryClient}>{children}</QueryClientProvider>;
 }
