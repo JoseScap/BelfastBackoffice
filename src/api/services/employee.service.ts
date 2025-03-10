@@ -1,5 +1,5 @@
 // Juan [NOTE, 2025-02-27] Importamos el cliente tRPC
-import { trpcClient } from '../trpc/client';
+import { trpcClientMock } from '../trpc/client';
 
 // Juan [NOTE, 2025-02-27] Interfaces para el servicio de empleados
 export interface Employee {
@@ -17,7 +17,7 @@ export class EmployeeService {
   static async getAllEmployees(): Promise<Employee[]> {
     try {
       // Usamos el cliente mock de tRPC
-      const employees = await trpcClient.employee.getAll.query();
+      const employees = await trpcClientMock.employee.getAll.query();
       // Aseguramos que el resultado cumpla con la interfaz Employee[]
       return employees as Employee[];
     } catch (error) {
@@ -30,7 +30,7 @@ export class EmployeeService {
   static async getEmployeeById(id: string): Promise<Employee> {
     try {
       // Usamos el cliente mock de tRPC
-      await trpcClient.employee.getById.query();
+      await trpcClientMock.employee.getById.query();
       // Simulamos que el empleado tiene los datos correctos
       return {
         id,
@@ -49,7 +49,7 @@ export class EmployeeService {
   static async createEmployee(employeeData: Omit<Employee, 'id'>): Promise<Employee> {
     try {
       // Usamos el cliente mock de tRPC
-      await trpcClient.employee.create.mutate();
+      await trpcClientMock.employee.create.mutate();
       // Simulamos una respuesta
       return {
         id: 'new-id',
@@ -65,7 +65,7 @@ export class EmployeeService {
   static async updateEmployee(id: string, employeeData: Partial<Employee>): Promise<Employee> {
     try {
       // Usamos el cliente mock de tRPC
-      await trpcClient.employee.update.mutate();
+      await trpcClientMock.employee.update.mutate();
       // Simulamos una respuesta
       return {
         id,
@@ -84,7 +84,7 @@ export class EmployeeService {
   static async deleteEmployee(id: string): Promise<void> {
     try {
       // Usamos el cliente mock de tRPC
-      await trpcClient.employee.delete.mutate();
+      await trpcClientMock.employee.delete.mutate();
     } catch (error) {
       console.error(`Error deleting employee with ID ${id} with tRPC:`, error);
       throw error;
