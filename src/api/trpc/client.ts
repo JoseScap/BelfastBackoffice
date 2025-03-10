@@ -5,18 +5,18 @@
 // Juan [TOIMPLE, 2025-02-27] Implementar cliente tRPC real cuando se decida usar en producción
 // Descomentar el código comentado y eliminar el cliente mock
 
-/*
 import { createTRPCProxyClient, httpBatchLink } from '@trpc/client';
 import type { AppRouter } from '../../types/trpc';
-import { TRPC_URL } from '../config';
+
+const BACKEND_URL = 'http://localhost:3001';
 
 export const trpcClient = createTRPCProxyClient<AppRouter>({
   links: [
     httpBatchLink({
-      url: TRPC_URL,
-      // Añadimos headers para autenticación si es necesario
+      url: `${BACKEND_URL}/trpc`,
+      // Opcional: Configuración de headers si necesitas autenticación
       headers: () => {
-        const token = typeof localStorage !== 'undefined' ? localStorage.getItem('token') : null;
+        const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
         return {
           Authorization: token ? `Bearer ${token}` : '',
         };
@@ -24,10 +24,12 @@ export const trpcClient = createTRPCProxyClient<AppRouter>({
     }),
   ],
 });
-*/
+
+// Ejemplo de uso:
+// const result = await trpcClient.status.ping.query();
 
 // Cliente mock para desarrollo
-export const trpcClient = {
+export const trpcClientMock = {
   status: {
     health: {
       query: async () => ({ status: 'ok' }),
