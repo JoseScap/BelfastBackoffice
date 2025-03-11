@@ -1,6 +1,7 @@
 'use client';
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { useRouter } from 'next/navigation';
+import { trpcClient } from '@/api/trpc/client';
 
 // Definición de tipos para los roles de usuario
 export type UserRole = 'admin' | 'recepcion' | 'restaurant' | 'spa';
@@ -57,19 +58,6 @@ const CAPTCHA_THRESHOLD = 3;
 // Creación del contexto
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-// Usuario de prueba (superadmin)
-const TEST_USER: User = {
-  id: '1',
-  name: 'Admin',
-  email: 'admin@test.com',
-  role: 'admin',
-  phone: '+09 363 398 46',
-  bio: 'Team Manager',
-  country: 'United States',
-  city: 'Phoenix, Arizona, United States.',
-  postalCode: 'ERT 2489',
-};
-
 // Proveedor del contexto de autenticación
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
@@ -81,9 +69,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   // Verificar si el usuario está autenticado al cargar la página
   useEffect(() => {
-    const storedUser = localStorage.getItem('user');
-    if (storedUser) {
-      setUser(JSON.parse(storedUser));
+    const token = localStorage.getItem('token');
+    if (token) {
+      trpcClient.auth.profile
+        .query()
+        .then(userData => {
+          setUser(userData);
+        })
+        .catch(() => {
+          localStorage.removeItem('token');
+          setUser(null);
+        });
     }
 
     // Recuperar información de intentos de login y bloqueo
@@ -168,79 +164,78 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     // Verificar si se requiere captcha
     if (loginAttempts >= CAPTCHA_THRESHOLD) {
       // En un entorno real, aquí se verificaría el captcha
-      // Para este ejemplo, asumimos que el captcha es válido
       console.log('Captcha requerido para este intento de inicio de sesión');
     }
 
-    // Simulación de una petición a un servidor
-    return new Promise(resolve => {
-      setTimeout(() => {
-        // Verificar credenciales del usuario de prueba
-        if (email === TEST_USER.email && password === 'admin123') {
-          setUser(TEST_USER);
-          localStorage.setItem('user', JSON.stringify(TEST_USER));
-          resetLoginAttempts();
-          setIsLoading(false);
-          resolve({ success: true });
-        } else {
-          // Incrementar contador de intentos fallidos
-          const newAttempts = loginAttempts + 1;
-          setLoginAttempts(newAttempts);
-          localStorage.setItem('loginAttempts', newAttempts.toString());
+    try {
+      const { accessToken } = await trpcClient.auth.login.mutate({ email, password });
 
-          // Verificar si se debe bloquear la cuenta
-          if (newAttempts >= MAX_LOGIN_ATTEMPTS) {
-            lockAccount();
-            setIsLoading(false);
-            resolve({
-              success: false,
-              error: {
-                message: `Demasiados intentos fallidos. Cuenta bloqueada por ${LOCKOUT_DURATION_MINUTES} minutos.`,
-                code: 'MAX_ATTEMPTS_EXCEEDED',
-              },
-            });
-          } else {
-            setIsLoading(false);
-            resolve({
-              success: false,
-              error: {
-                message: `Credenciales incorrectas. Intentos restantes: ${
-                  MAX_LOGIN_ATTEMPTS - newAttempts
-                }.`,
-                code: 'INVALID_CREDENTIALS',
-              },
-            });
-          }
-        }
-      }, 1000); // Simular retraso de red
-    });
+      // Guardar el token
+      localStorage.setItem('token', accessToken);
+
+      // Obtener el perfil del usuario
+      const userData = await trpcClient.auth.profile.query();
+      setUser(userData);
+      resetLoginAttempts();
+      setIsLoading(false);
+      return { success: true };
+    } catch (error) {
+      // Incrementar contador de intentos fallidos
+      const newAttempts = loginAttempts + 1;
+      setLoginAttempts(newAttempts);
+      localStorage.setItem('loginAttempts', newAttempts.toString());
+
+      // Verificar si se debe bloquear la cuenta
+      if (newAttempts >= MAX_LOGIN_ATTEMPTS) {
+        lockAccount();
+        setIsLoading(false);
+        return {
+          success: false,
+          error: {
+            message: `Demasiados intentos fallidos. Cuenta bloqueada por ${LOCKOUT_DURATION_MINUTES} minutos.`,
+            code: 'MAX_ATTEMPTS_EXCEEDED',
+          },
+        };
+      }
+
+      setIsLoading(false);
+      return {
+        success: false,
+        error: {
+          message: `Credenciales incorrectas. Intentos restantes: ${
+            MAX_LOGIN_ATTEMPTS - newAttempts
+          }.`,
+          code: 'INVALID_CREDENTIALS',
+        },
+      };
+    }
   };
 
   // Función para actualizar datos del usuario
   const updateUserData = async (data: UserUpdateData): Promise<boolean> => {
     setIsLoading(true);
-
-    // Simulación de una petición a un servidor
-    return new Promise(resolve => {
-      setTimeout(() => {
-        if (user) {
-          const updatedUser = { ...user, ...data };
-          setUser(updatedUser);
-          localStorage.setItem('user', JSON.stringify(updatedUser));
-          setIsLoading(false);
-          resolve(true);
-        } else {
-          setIsLoading(false);
-          resolve(false);
-        }
-      }, 800); // Simular retraso de red
-    });
+    try {
+      // Aquí deberías implementar la llamada real a la API para actualizar los datos
+      // Por ahora mantenemos la simulación
+      if (user) {
+        const updatedUser = { ...user, ...data };
+        setUser(updatedUser);
+        setIsLoading(false);
+        return true;
+      }
+      return false;
+    } catch (error) {
+      console.error('Error updating user data:', error);
+      return false;
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   // Función para cerrar sesión
   const logout = () => {
     setUser(null);
-    localStorage.removeItem('user');
+    localStorage.removeItem('token');
     router.push('/signin');
   };
 

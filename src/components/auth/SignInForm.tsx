@@ -8,6 +8,7 @@ import { ChevronLeftIcon, EyeCloseIcon, EyeIcon } from '@/icons';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import React, { useState, useEffect } from 'react';
+import { toast } from 'react-hot-toast';
 
 export default function SignInForm() {
   const [showPassword, setShowPassword] = useState(false);
@@ -74,10 +75,10 @@ export default function SignInForm() {
       const result = await login(email, password);
 
       if (result.success) {
-        router.push('/hotel-management'); // Redirigir a hotel-management después del login exitoso
+        toast.success('Inicio de sesión exitoso');
+        router.push('/hotel-management');
       } else {
-        // Mostrar el mensaje de error específico
-        setError(result.error?.message || 'Credenciales incorrectas');
+        setError(result.error?.message || 'Error al iniciar sesión');
 
         // Si la cuenta está bloqueada, mostrar el tiempo restante
         if (result.error?.code === 'ACCOUNT_LOCKED' && lockoutEndTime) {
@@ -121,9 +122,6 @@ export default function SignInForm() {
               Enter your email and password to sign in!
             </p>
             {error && <p className="mt-2 text-sm text-error-500">{error}</p>}
-            <p className="mt-2 text-xs text-brand-500">
-              Usuario de prueba: admin@test.com / admin123
-            </p>
             {loginAttempts > 0 && !isAccountLocked && (
               <p className="mt-2 text-xs text-warning-500">Intentos fallidos: {loginAttempts}</p>
             )}

@@ -2,4 +2,3 @@
 // Este archivo está preparado pero no se utilizará hasta que se decida integrar tRPC
 
 export * from './client';
-export * from './provider';
