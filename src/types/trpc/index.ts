@@ -40,7 +40,7 @@ export const appRouter = t.router({
   roomStatus: roomStatusRouter,
 });
 
-// Tipos inferidos para entradas y salidas
+// Tipos inferidos para entradas y salidass
 export type AppRouter = typeof appRouter;
 
 export type RouterInputs = {
