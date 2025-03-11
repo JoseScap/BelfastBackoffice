@@ -2,6 +2,7 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { useRouter } from 'next/navigation';
 import { trpcClient } from '@/api/trpc/client';
+import toast from 'react-hot-toast';
 
 // Definición de tipos para los roles de usuario
 export type UserRole = 'admin' | 'recepcion' | 'restaurant' | 'spa';
@@ -184,7 +185,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       const newAttempts = loginAttempts + 1;
       setLoginAttempts(newAttempts);
       localStorage.setItem('loginAttempts', newAttempts.toString());
-
+      toast.error(`Error during login: ${error}`);
       // Verificar si se debe bloquear la cuenta
       if (newAttempts >= MAX_LOGIN_ATTEMPTS) {
         lockAccount();
