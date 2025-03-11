@@ -104,9 +104,12 @@ export default function RoomGridPage() {
 
   // Efecto para procesar las operaciones pendientes
   useEffect(() => {
-    // Limpiar timeouts al desmontar
+    // Cleanup function for timeouts
+    const currentTimeouts = timeoutsRef.current;
+
     return () => {
-      Object.values(timeoutsRef.current).forEach(timeout => clearTimeout(timeout));
+      // Clear all timeouts on cleanup
+      Object.values(currentTimeouts).forEach(timeout => clearTimeout(timeout));
     };
   }, []);
 
@@ -196,7 +199,6 @@ export default function RoomGridPage() {
         description="Gestión visual de habitaciones para Belfast Backoffice"
       />
       <PageBreadcrumb pageTitle="Cuadrícula de Habitaciones" />
-
       <div className="flex flex-col gap-5 md:gap-7 2xl:gap-10">
         {/* Controls */}
         <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">

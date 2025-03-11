@@ -1,14 +1,70 @@
-"use client";
-import Checkbox from "@/components/form/input/Checkbox";
-import Input from "@/components/form/input/InputField";
-import Label from "@/components/form/Label";
-import { EyeCloseIcon, EyeIcon } from "@/icons";
-import Link from "next/link";
-import React, { useState } from "react";
+'use client';
+import Checkbox from '@/components/form/input/Checkbox';
+import Input from '@/components/form/input/InputField';
+import Label from '@/components/form/Label';
+import { EyeCloseIcon, EyeIcon } from '@/icons';
+import Link from 'next/link';
+import React, { useState } from 'react';
+import { useRouter } from 'next/navigation';
+import { trpcClient } from '@/api/trpc/client';
+import { toast } from 'react-hot-toast';
 
 export default function SignUpForm() {
   const [showPassword, setShowPassword] = useState(false);
   const [isChecked, setIsChecked] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState('');
+  const router = useRouter();
+
+  // Form state
+  const [formData, setFormData] = useState({
+    firstName: '',
+    lastName: '',
+    email: '',
+    password: '',
+  });
+
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const { name, value } = e.target;
+    setFormData(prev => ({
+      ...prev,
+      [name]: value,
+    }));
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setError('');
+
+    if (!formData.firstName || !formData.lastName || !formData.email || !formData.password) {
+      setError('Por favor, completa todos los campos requeridos');
+      return;
+    }
+
+    if (!isChecked) {
+      setError('Debes aceptar los términos y condiciones');
+      return;
+    }
+
+    setIsLoading(true);
+
+    try {
+      await trpcClient.auth.register.mutate({
+        fullName: `${formData.firstName} ${formData.lastName}`,
+        email: formData.email,
+        password: formData.password,
+      });
+
+      toast.success('Registro exitoso');
+      router.push('/signin');
+    } catch (err) {
+      console.error('Error during registration:', err);
+      setError('Error al registrar el usuario. Por favor, intenta nuevamente.');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   return (
     <div className="flex flex-col flex-1 p-6 rounded-2xl sm:rounded-none sm:border-0 sm:p-8">
       <div className="w-full max-w-md pt-5 mx-auto sm:py-10">
@@ -43,6 +99,7 @@ export default function SignUpForm() {
           <p className="text-sm text-gray-500 dark:text-gray-400">
             Enter your email and password to sign up!
           </p>
+          {error && <p className="mt-2 text-sm text-error-500">{error}</p>}
         </div>
         <div>
           <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 sm:gap-5">
@@ -97,7 +154,7 @@ export default function SignUpForm() {
               </span>
             </div>
           </div>
-          <form>
+          <form onSubmit={handleSubmit}>
             <div className="space-y-5">
               <div className="grid grid-cols-1 gap-5 sm:grid-cols-2">
                 {/* <!-- First Name --> */}
@@ -107,8 +164,10 @@ export default function SignUpForm() {
                   </Label>
                   <Input
                     type="text"
-                    id="fname"
-                    name="fname"
+                    id="firstName"
+                    name="firstName"
+                    value={formData.firstName}
+                    onChange={handleChange}
                     placeholder="Enter your first name"
                   />
                 </div>
@@ -119,8 +178,10 @@ export default function SignUpForm() {
                   </Label>
                   <Input
                     type="text"
-                    id="lname"
-                    name="lname"
+                    id="lastName"
+                    name="lastName"
+                    value={formData.lastName}
+                    onChange={handleChange}
                     placeholder="Enter your last name"
                   />
                 </div>
@@ -134,6 +195,8 @@ export default function SignUpForm() {
                   type="email"
                   id="email"
                   name="email"
+                  value={formData.email}
+                  onChange={handleChange}
                   placeholder="Enter your email"
                 />
               </div>
@@ -144,8 +207,12 @@ export default function SignUpForm() {
                 </Label>
                 <div className="relative">
                   <Input
+                    type={showPassword ? 'text' : 'password'}
+                    id="password"
+                    name="password"
+                    value={formData.password}
+                    onChange={handleChange}
                     placeholder="Enter your password"
-                    type={showPassword ? "text" : "password"}
                   />
                   <span
                     onClick={() => setShowPassword(!showPassword)}
@@ -161,33 +228,28 @@ export default function SignUpForm() {
               </div>
               {/* <!-- Checkbox --> */}
               <div className="flex items-center gap-3">
-                <Checkbox
-                  className="w-5 h-5"
-                  checked={isChecked}
-                  onChange={setIsChecked}
-                />
+                <Checkbox className="w-5 h-5" checked={isChecked} onChange={setIsChecked} />
                 <p className="inline-block font-normal text-gray-500 dark:text-gray-400">
-                  By creating an account means you agree to the{" "}
-                  <span className="text-gray-800 dark:text-white/90">
-                    Terms and Conditions,
-                  </span>{" "}
-                  and our{" "}
-                  <span className="text-gray-800 dark:text-white">
-                    Privacy Policy
-                  </span>
+                  By creating an account means you agree to the{' '}
+                  <span className="text-gray-800 dark:text-white/90">Terms and Conditions,</span>{' '}
+                  and our <span className="text-gray-800 dark:text-white">Privacy Policy</span>
                 </p>
               </div>
               {/* <!-- Button --> */}
               <div>
-                <button className="flex items-center justify-center w-full px-4 py-3 text-sm font-medium text-white transition rounded-lg bg-brand-500 shadow-theme-xs hover:bg-brand-600">
-                  Sign Up
+                <button
+                  type="submit"
+                  disabled={isLoading}
+                  className="flex items-center justify-center w-full px-4 py-3 text-sm font-medium text-white transition rounded-lg bg-brand-500 shadow-theme-xs hover:bg-brand-600 disabled:opacity-50"
+                >
+                  {isLoading ? 'Registrando...' : 'Sign Up'}
                 </button>
               </div>
             </div>
           </form>
           <div className="mt-5">
             <p className="text-sm font-normal text-center text-gray-700 dark:text-gray-400 sm:text-start">
-              Already have an account?
+              Already have an account?{' '}
               <Link
                 href="/signin"
                 className="text-brand-500 hover:text-brand-600 dark:text-brand-400"
