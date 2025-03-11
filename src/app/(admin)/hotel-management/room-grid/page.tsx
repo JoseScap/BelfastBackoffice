@@ -11,6 +11,7 @@ import { FloorSelect, DateSelect } from '@/components/common/SelectControls';
 import { toast } from 'react-hot-toast';
 import PendingCounter from '@/components/common/PendingCounter';
 import StatusColumn from '@/components/hotel/StatusColumn';
+import { StatusCheck } from '@/components/StatusCheck';
 
 // Tipo para las operaciones en cola
 type QueuedOperation = {
@@ -196,7 +197,7 @@ export default function RoomGridPage() {
         description="Gestión visual de habitaciones para Belfast Backoffice"
       />
       <PageBreadcrumb pageTitle="Cuadrícula de Habitaciones" />
-
+      <StatusCheck />
       <div className="flex flex-col gap-5 md:gap-7 2xl:gap-10">
         {/* Controls */}
         <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
