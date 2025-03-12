@@ -116,12 +116,18 @@ const PendingRequestsPage = () => {
               <SearchFilter<PriorityKey>
                 searchTerm={searchTerm}
                 onSearchChange={setSearchTerm}
-                filterValue="high"
-                onFilterChange={() => {}}
-                filterOptions={[
-                  { value: 'high', label: 'Alta' },
-                  { value: 'medium', label: 'Media' },
-                  { value: 'low', label: 'Baja' },
+                filters={[
+                  {
+                    id: 'priority',
+                    label: 'Prioridad',
+                    value: 'high',
+                    onChange: () => {},
+                    options: [
+                      { value: 'high', label: 'Alta' },
+                      { value: 'medium', label: 'Media' },
+                      { value: 'low', label: 'Baja' },
+                    ],
+                  },
                 ]}
               />
             </div>

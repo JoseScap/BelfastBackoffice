@@ -158,9 +158,15 @@ const ReservationsPage = () => {
             <SearchFilter<FilterKey>
               searchTerm={searchTerm}
               onSearchChange={setSearchTerm}
-              filterValue={statusFilter}
-              onFilterChange={setStatusFilter}
-              filterOptions={statusOptions}
+              filters={[
+                {
+                  id: 'status',
+                  label: 'Estado',
+                  value: statusFilter,
+                  onChange: setStatusFilter,
+                  options: [{ value: 'all', label: 'Todos los Estados' }, ...statusOptions],
+                },
+              ]}
               totalResults={filteredAppointments.length}
             />
             <div className="w-full sm:w-auto">
