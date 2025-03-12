@@ -125,9 +125,15 @@ const RoomsPage = () => {
           <SearchFilter<FilterKey>
             searchTerm={searchTerm}
             onSearchChange={setSearchTerm}
-            filterValue={statusFilter}
-            onFilterChange={setStatusFilter}
-            filterOptions={statusOptions}
+            filters={[
+              {
+                id: 'status',
+                label: 'Estado',
+                value: statusFilter,
+                onChange: setStatusFilter,
+                options: statusOptions,
+              },
+            ]}
             totalResults={filteredRooms.length}
           />
 
