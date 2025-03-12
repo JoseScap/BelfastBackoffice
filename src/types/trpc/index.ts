@@ -35,7 +35,7 @@ import { RoomStatusResponse } from '@/types/api/roomStatus';
 export const appRouter = t.router({
   auth: authRouter,
   status: statusRouter,
-  room: roomRouter,
+  rooms: roomRouter,
   roomCategory: roomCategoryRouter,
   roomStatus: roomStatusRouter,
 });

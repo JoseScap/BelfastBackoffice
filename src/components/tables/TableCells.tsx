@@ -1,7 +1,8 @@
 import React from 'react';
-import { DashboardIcons, IconWrapper } from '@/components/common/icons';
+import { IconWrapper } from '@/components/common/icons';
 import { getAppointmentStatusConfig, getRoomStatusConfig } from '@/utils/statusColors';
 import { AppointmentStatusValue, RoomStatusValue } from '@/types/hotel';
+import { BsEye, BsPencil, BsTrash } from 'react-icons/bs';
 
 // Tipos base
 type BaseCellProps = {
@@ -165,41 +166,24 @@ SourceCell.displayName = 'SourceCell';
 
 // Celda de acciones
 export const ActionsCell = React.memo(({ onView, onEdit, onDelete }: ActionsCellProps) => (
-  <TableCell>
+  <td className="border-b border-[#eee] py-5 px-4 dark:border-strokedark">
     <div className="flex items-center space-x-3.5">
-      <button
-        onClick={onView}
-        className="hover:text-primary focus:outline-none focus:ring-2 focus:ring-primary rounded-full p-1"
-        title="Ver detalles"
-        aria-label="Ver detalles"
-      >
-        <IconWrapper className="fill-current">
-          <DashboardIcons.Search />
+      <button className="hover:text-primary" onClick={onView} title="Ver detalles">
+        <IconWrapper className="fill-current flex items-center justify-center hover:bg-gray-300 rounded-full p-1">
+          <BsEye size={20} />
         </IconWrapper>
       </button>
-      {onEdit && (
-        <button
-          onClick={onEdit}
-          className="hover:text-primary focus:outline-none focus:ring-2 focus:ring-primary rounded-full p-1"
-          title="Editar"
-          aria-label="Editar"
-        >
-          <IconWrapper className="fill-current">
-            <DashboardIcons.List />
-          </IconWrapper>
-        </button>
-      )}
-      <button
-        onClick={onDelete}
-        className="hover:text-primary focus:outline-none focus:ring-2 focus:ring-primary rounded-full p-1"
-        title="Eliminar"
-        aria-label="Eliminar"
-      >
-        <IconWrapper className="fill-current">
-          <DashboardIcons.Alert />
+      <button className="hover:text-primary" onClick={onEdit} title="Editar">
+        <IconWrapper className="fill-current flex items-center justify-center hover:bg-gray-300 rounded-full p-1">
+          <BsPencil size={20} />
+        </IconWrapper>
+      </button>
+      <button className="hover:text-primary" onClick={onDelete} title="Eliminar">
+        <IconWrapper className="fill-current flex items-center justify-center hover:bg-gray-300 rounded-full p-1">
+          <BsTrash size={20} />
         </IconWrapper>
       </button>
     </div>
-  </TableCell>
+  </td>
 ));
 ActionsCell.displayName = 'ActionsCell';

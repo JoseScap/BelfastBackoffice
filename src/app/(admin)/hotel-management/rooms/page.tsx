@@ -1,6 +1,7 @@
 'use client';
 
-import React, { useState, useMemo, useCallback } from 'react';
+import React, { useState, useMemo, useCallback, useEffect } from 'react';
+import { toast } from 'react-hot-toast';
 
 // Componentes
 import PageBreadcrumb from '@/components/common/PageBreadCrumb';
@@ -13,35 +14,38 @@ import {
   CategoryCell,
   FloorCell,
   CapacityCell,
-  PriceCell,
   RoomStatusCell,
   ActionsCell,
 } from '@/components/tables/TableCells';
+import ViewRoomModal from '@/components/modals/ViewRoomModal';
+import EditRoomModal from '@/components/modals/EditRoomModal';
+import DeleteRoomModal from '@/components/modals/DeleteRoomModal';
 
-// Datos y tipos
-import { mockRooms } from '@/mock-data';
+// tRPC
+import { trpcClient } from '@/api/trpc';
+import { RoomResponse } from '@/types/api/room';
 import { RoomStatusValue } from '@/types/hotel';
 
 interface StatusConfig {
   label: string;
 }
 
-type StatusKey = RoomStatusValue;
+type StatusKey = string;
 type FilterKey = 'all' | StatusKey;
 
 const ITEMS_PER_PAGE = 10;
 
-const STATUS_CONFIG: Record<StatusKey, StatusConfig> = {
-  Disponible: {
+const STATUS_CONFIG: Record<string, StatusConfig> = {
+  AVAILABLE: {
     label: 'Disponible',
   },
-  'No Disponible': {
+  UNAVAILABLE: {
     label: 'No Disponible',
   },
-  Limpieza: {
+  CLEANING: {
     label: 'Limpieza',
   },
-  Mantenimiento: {
+  MAINTENANCE: {
     label: 'Mantenimiento',
   },
 };
@@ -51,66 +55,241 @@ const TABLE_HEADERS = [
   { key: 'category', label: 'Categoría', minWidth: '150px' },
   { key: 'floor', label: 'Piso', minWidth: '100px' },
   { key: 'capacity', label: 'Capacidad', minWidth: '120px' },
-  { key: 'price', label: 'Precio/Noche', minWidth: '120px' },
   { key: 'status', label: 'Estado', minWidth: '120px' },
   { key: 'actions', label: 'Acciones', minWidth: 'auto' },
 ] as const;
+
+// Mapeo de valores de estado del backend a valores de estado de la UI
+const mapStatusToUI = (backendStatus: string): RoomStatusValue => {
+  const statusMap: Record<string, RoomStatusValue> = {
+    AVAILABLE: 'Disponible',
+    UNAVAILABLE: 'No Disponible',
+    CLEANING: 'Limpieza',
+    MAINTENANCE: 'Mantenimiento',
+  };
+
+  return statusMap[backendStatus] || 'Disponible';
+};
 
 const RoomsPage = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState<FilterKey>('all');
+  const [floorFilter, setFloorFilter] = useState<string>('all');
+  const [categoryFilter, setCategoryFilter] = useState<string>('all');
+  const [rooms, setRooms] = useState<RoomResponse[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<Error | null>(null);
+  const [isViewModalOpen, setIsViewModalOpen] = useState(false);
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+  const [selectedRoom, setSelectedRoom] = useState<RoomResponse | null>(null);
+  const [isLoadingRoom, setIsLoadingRoom] = useState(false);
 
-  const handleViewRoom = useCallback((id: string) => {
-    console.log('Ver habitación:', id);
+  const fetchRooms = useCallback(async () => {
+    try {
+      setIsLoading(true);
+      const realResult = await trpcClient.rooms.getByFilter.query({
+        filter: {},
+        deleted: false,
+      });
+      setRooms(realResult);
+      setError(null);
+    } catch (err) {
+      if (err instanceof Error) {
+        setError(err);
+      } else {
+        setError(new Error('Error desconocido'));
+      }
+    } finally {
+      setIsLoading(false);
+    }
   }, []);
 
-  const handleEditRoom = useCallback((id: string) => {
-    console.log('Editar habitación:', id);
+  // Cargar habitaciones
+  useEffect(() => {
+    fetchRooms();
+  }, [fetchRooms]);
+
+  const handleViewRoom = useCallback(async (id: string) => {
+    try {
+      setIsLoadingRoom(true);
+      setIsViewModalOpen(true);
+
+      const room = await trpcClient.rooms.getById.query({ id, deleted: false });
+      setSelectedRoom(room);
+    } catch (error) {
+      console.error('Error al cargar los detalles de la habitación:', error);
+      toast.error('Error al cargar los detalles de la habitación');
+    } finally {
+      setIsLoadingRoom(false);
+    }
   }, []);
 
-  const handleDeleteRoom = useCallback((id: string) => {
-    console.log('Eliminar habitación:', id);
+  const handleCloseViewModal = useCallback(() => {
+    setIsViewModalOpen(false);
+    setSelectedRoom(null);
   }, []);
+
+  const handleEditRoom = useCallback(async (id: string) => {
+    try {
+      setIsLoadingRoom(true);
+      setIsEditModalOpen(true);
+
+      const room = await trpcClient.rooms.getById.query({ id, deleted: false });
+      setSelectedRoom(room);
+    } catch (error) {
+      console.error('Error al cargar los detalles de la habitación:', error);
+      toast.error('Error al cargar los detalles de la habitación');
+    } finally {
+      setIsLoadingRoom(false);
+    }
+  }, []);
+
+  const handleCloseEditModal = useCallback(() => {
+    setIsEditModalOpen(false);
+    setSelectedRoom(null);
+  }, []);
+
+  const handleEditSuccess = useCallback(() => {
+    fetchRooms();
+  }, [fetchRooms]);
+
+  const handleDeleteRoom = useCallback(async (id: string) => {
+    try {
+      setIsLoadingRoom(true);
+      setIsDeleteModalOpen(true);
+
+      const room = await trpcClient.rooms.getById.query({ id, deleted: false });
+      setSelectedRoom(room);
+    } catch (error) {
+      console.error('Error al cargar los detalles de la habitación:', error);
+      toast.error('Error al cargar los detalles de la habitación');
+    } finally {
+      setIsLoadingRoom(false);
+    }
+  }, []);
+
+  const handleCloseDeleteModal = useCallback(() => {
+    setIsDeleteModalOpen(false);
+    setSelectedRoom(null);
+  }, []);
+
+  const handleDeleteSuccess = useCallback(() => {
+    fetchRooms();
+  }, [fetchRooms]);
 
   const handleCreateRoom = useCallback(() => {
-    console.log('Crear nueva habitación');
+    // Implementar lógica de crear habitación
   }, []);
 
+  // Obtener opciones de filtro desde los datos reales
+  const filters = useMemo(() => {
+    const uniqueStatuses = new Set<string>();
+    const uniqueFloors = new Set<string>();
+    const uniqueCategories = new Set<string>();
+
+    rooms.forEach((room: RoomResponse) => {
+      uniqueStatuses.add(room.status.value);
+      uniqueFloors.add(room.floor);
+      uniqueCategories.add(room.category.name);
+    });
+
+    return [
+      {
+        id: 'status',
+        label: 'Estado',
+        value: statusFilter,
+        onChange: setStatusFilter,
+        options: [
+          { value: 'all', label: 'Todos los Estados' },
+          ...Array.from(uniqueStatuses).map(value => ({
+            value,
+            label: STATUS_CONFIG[value]?.label || value,
+          })),
+        ],
+      },
+      {
+        id: 'floor',
+        label: 'Piso',
+        value: floorFilter,
+        onChange: setFloorFilter,
+        options: [
+          { value: 'all', label: 'Todos los Pisos' },
+          ...Array.from(uniqueFloors).map(floor => ({
+            value: floor,
+            label: `Piso ${floor}`,
+          })),
+        ],
+      },
+      {
+        id: 'category',
+        label: 'Categoría',
+        value: categoryFilter,
+        onChange: setCategoryFilter,
+        options: [
+          { value: 'all', label: 'Todas las Categorías' },
+          ...Array.from(uniqueCategories).map(category => ({
+            value: category,
+            label: category,
+          })),
+        ],
+      },
+    ];
+  }, [rooms, statusFilter, floorFilter, categoryFilter]);
+
+  // Filtrar habitaciones según búsqueda y filtros
   const filteredRooms = useMemo(() => {
+    if (!rooms.length) return [];
+
     const searchLower = searchTerm.toLowerCase();
-    return mockRooms.filter(room => {
+    return rooms.filter((room: RoomResponse) => {
       const matchesSearch =
         room.number.toString().includes(searchTerm) ||
         room.category.name.toLowerCase().includes(searchLower) ||
         room.category.description.toLowerCase().includes(searchLower);
 
       const matchesStatus = statusFilter === 'all' || room.status.value === statusFilter;
+      const matchesFloor = floorFilter === 'all' || room.floor === floorFilter;
+      const matchesCategory = categoryFilter === 'all' || room.category.name === categoryFilter;
 
-      return matchesSearch && matchesStatus;
+      return matchesSearch && matchesStatus && matchesFloor && matchesCategory;
     });
-  }, [searchTerm, statusFilter]);
+  }, [rooms, searchTerm, statusFilter, floorFilter, categoryFilter]);
 
+  // Ordenar habitaciones por número
   const sortedRooms = useMemo(
     () => [...filteredRooms].sort((a, b) => a.number - b.number),
     [filteredRooms]
   );
 
+  // Paginación
   const currentRooms = useMemo(
     () => sortedRooms.slice((currentPage - 1) * ITEMS_PER_PAGE, currentPage * ITEMS_PER_PAGE),
     [sortedRooms, currentPage]
   );
 
-  const statusOptions = useMemo(
-    () => [
-      { value: 'all' as const, label: 'Todos los Estados' },
-      ...Object.entries(STATUS_CONFIG).map(([value, { label }]) => ({
-        value: value as StatusKey,
-        label,
-      })),
-    ],
-    []
-  );
+  if (isLoading) {
+    return (
+      <div className="flex flex-col items-center justify-center min-h-[400px]">
+        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-primary"></div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="flex flex-col items-center justify-center min-h-[400px] gap-4">
+        <div className="text-red-500">Error al cargar habitaciones: {error.message}</div>
+        <button
+          onClick={() => window.location.reload()}
+          className="mt-4 px-4 py-2 bg-primary text-white rounded hover:bg-opacity-80"
+        >
+          Reintentar
+        </button>
+      </div>
+    );
+  }
 
   return (
     <>
@@ -120,14 +299,36 @@ const RoomsPage = () => {
       />
       <PageBreadcrumb pageTitle="Habitaciones" />
 
+      {/* View Modal */}
+      <ViewRoomModal
+        isOpen={isViewModalOpen}
+        onClose={handleCloseViewModal}
+        room={selectedRoom}
+        isLoading={isLoadingRoom}
+      />
+
+      {/* Edit Modal */}
+      <EditRoomModal
+        isOpen={isEditModalOpen}
+        onClose={handleCloseEditModal}
+        room={selectedRoom}
+        onSuccess={handleEditSuccess}
+      />
+
+      {/* Delete Modal */}
+      <DeleteRoomModal
+        isOpen={isDeleteModalOpen}
+        onClose={handleCloseDeleteModal}
+        room={selectedRoom}
+        onSuccess={handleDeleteSuccess}
+      />
+
       <div className="flex flex-col gap-5 md:gap-7 2xl:gap-10">
         <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-          <SearchFilter<FilterKey>
+          <SearchFilter<string>
             searchTerm={searchTerm}
             onSearchChange={setSearchTerm}
-            filterValue={statusFilter}
-            onFilterChange={setStatusFilter}
-            filterOptions={statusOptions}
+            filters={filters}
             totalResults={filteredRooms.length}
           />
 
@@ -162,37 +363,49 @@ const RoomsPage = () => {
                 </tr>
               </thead>
               <tbody>
-                {currentRooms.map(room => (
-                  <tr key={room.id}>
-                    <NumberCell number={room.number} />
-                    <CategoryCell
-                      name={room.category.name}
-                      description={room.category.description}
-                    />
-                    <FloorCell floor={room.floor} />
-                    <CapacityCell capacity={room.capacity} />
-                    <PriceCell amount={room.category.price} />
-                    <RoomStatusCell status={room.status.value} />
-                    <ActionsCell
-                      onView={() => handleViewRoom(room.id)}
-                      onEdit={() => handleEditRoom(room.id)}
-                      onDelete={() => handleDeleteRoom(room.id)}
-                    />
+                {currentRooms.length > 0 ? (
+                  currentRooms.map(room => (
+                    <tr key={room.id}>
+                      <NumberCell number={room.number} />
+                      <CategoryCell
+                        name={room.category.name}
+                        description={room.category.description}
+                      />
+                      <FloorCell floor={parseInt(room.floor)} />
+                      <CapacityCell capacity={room.category.capacity} />
+                      <RoomStatusCell status={mapStatusToUI(room.status.value)} />
+                      <ActionsCell
+                        onView={() => handleViewRoom(room.id)}
+                        onEdit={() => handleEditRoom(room.id)}
+                        onDelete={() => handleDeleteRoom(room.id)}
+                      />
+                    </tr>
+                  ))
+                ) : (
+                  <tr>
+                    <td
+                      colSpan={TABLE_HEADERS.length}
+                      className="py-4 px-4 text-center text-gray-500"
+                    >
+                      No se encontraron habitaciones
+                    </td>
                   </tr>
-                ))}
+                )}
               </tbody>
             </table>
           </div>
         </div>
 
-        <div className="flex items-center justify-between">
-          <Pagination
-            currentPage={currentPage}
-            totalItems={sortedRooms.length}
-            itemsPerPage={ITEMS_PER_PAGE}
-            onPageChange={setCurrentPage}
-          />
-        </div>
+        {currentRooms.length > 0 && (
+          <div className="flex items-center justify-between">
+            <Pagination
+              currentPage={currentPage}
+              totalItems={sortedRooms.length}
+              itemsPerPage={ITEMS_PER_PAGE}
+              onPageChange={setCurrentPage}
+            />
+          </div>
+        )}
       </div>
     </>
   );
