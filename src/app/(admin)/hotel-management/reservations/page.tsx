@@ -25,7 +25,6 @@ type StatusConfig = {
 
 type SourceKey = 'app' | 'manual';
 type StatusKey = AppointmentStatusValue;
-type FilterKey = 'all' | StatusKey;
 type SourceFilterKey = 'all' | SourceKey;
 
 // Constantes
@@ -71,7 +70,7 @@ const TABLE_HEADERS = [
 const ReservationsPage = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const [searchTerm, setSearchTerm] = useState('');
-  const [statusFilter, setStatusFilter] = useState<FilterKey>('all');
+  const [statusFilter, setStatusFilter] = useState('all');
   const [sourceFilter, setSourceFilter] = useState<SourceFilterKey>('all');
 
   // Handlers
@@ -155,7 +154,7 @@ const ReservationsPage = () => {
       <div className="flex flex-col gap-5 md:gap-7 2xl:gap-10">
         <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <div className="flex items-center gap-4 flex-wrap">
-            <SearchFilter<FilterKey>
+            <SearchFilter
               searchTerm={searchTerm}
               onSearchChange={setSearchTerm}
               filters={[

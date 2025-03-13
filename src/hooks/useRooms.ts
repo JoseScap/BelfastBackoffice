@@ -50,7 +50,7 @@ export const useRooms = (): UseRoomsReturn => {
   // UI states
   const [currentPage, setCurrentPage] = useState(1);
   const [searchTerm, setSearchTerm] = useState('');
-  const [statusFilter, setStatusFilter] = useState<FilterKey>('all');
+  const [statusFilter, setStatusFilter] = useState('all');
   const [floorFilter, setFloorFilter] = useState<string>('all');
   const [categoryFilter, setCategoryFilter] = useState<string>('all');
   const [isLoading, setIsLoading] = useState(true);

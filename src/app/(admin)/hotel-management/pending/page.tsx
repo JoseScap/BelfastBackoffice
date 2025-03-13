@@ -113,7 +113,7 @@ const PendingRequestsPage = () => {
                   Solicitudes de reserva que requieren aprobación
                 </p>
               </div>
-              <SearchFilter<PriorityKey>
+              <SearchFilter
                 searchTerm={searchTerm}
                 onSearchChange={setSearchTerm}
                 filters={[

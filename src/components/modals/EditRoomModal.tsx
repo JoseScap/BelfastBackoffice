@@ -4,6 +4,7 @@ import Modal from '@/components/common/Modal';
 import Button from '@/components/ui/button/Button';
 import { toast } from 'react-hot-toast';
 import { trpcClient } from '@/api/trpc';
+import { ROOM_STATUS } from '@/utils/statusColors';
 
 interface EditRoomModalProps {
   isOpen: boolean;
@@ -156,10 +157,10 @@ const EditRoomModal: React.FC<EditRoomModalProps> = ({ isOpen, onClose, room, on
               className="mt-1 block w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary dark:border-gray-600 dark:bg-boxdark"
               required
             >
-              <option value="AVAILABLE">Disponible</option>
-              <option value="UNAVAILABLE">No Disponible</option>
-              <option value="CLEANING">Limpieza</option>
-              <option value="MAINTENANCE">Mantenimiento</option>
+              <option value="AVAILABLE">{ROOM_STATUS.AVAILABLE}</option>
+              <option value="UNAVAILABLE">{ROOM_STATUS.UNAVAILABLE}</option>
+              <option value="CLEANING">{ROOM_STATUS.CLEANING}</option>
+              <option value="MAINTENANCE">{ROOM_STATUS.MAINTENANCE}</option>
             </select>
           </div>
         </div>

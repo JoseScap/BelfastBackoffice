@@ -25,7 +25,7 @@ import EditRoomModal from '@/components/modals/EditRoomModal';
 import DeleteRoomModal from '@/components/modals/DeleteRoomModal';
 
 // Types
-import { RoomStatusValue } from '@/types/hotel';
+import { mapRoomStatusToUI } from '@/utils/statusColors';
 
 const ITEMS_PER_PAGE = 10;
 
@@ -37,18 +37,6 @@ const TABLE_HEADERS = [
   { key: 'status', label: 'Estado', minWidth: '120px' },
   { key: 'actions', label: 'Acciones', minWidth: 'auto' },
 ] as const;
-
-// Mapeo de valores de estado del backend a valores de estado de la UI
-const mapStatusToUI = (backendStatus: string): RoomStatusValue => {
-  const statusMap: Record<string, RoomStatusValue> = {
-    AVAILABLE: 'Disponible',
-    UNAVAILABLE: 'No Disponible',
-    CLEANING: 'Limpieza',
-    MAINTENANCE: 'Mantenimiento',
-  };
-
-  return statusMap[backendStatus] || 'Disponible';
-};
 
 const RoomsPage = () => {
   const {
@@ -159,7 +147,7 @@ const RoomsPage = () => {
 
       <div className="flex flex-col gap-5 md:gap-7 2xl:gap-10">
         <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-          <SearchFilter<string>
+          <SearchFilter
             searchTerm={searchTerm}
             onSearchChange={setSearchTerm}
             filters={filters}
@@ -207,7 +195,7 @@ const RoomsPage = () => {
                       />
                       <FloorCell floor={parseInt(room.floor)} />
                       <CapacityCell capacity={room.category.capacity} />
-                      <RoomStatusCell status={mapStatusToUI(room.status.value)} />
+                      <RoomStatusCell status={mapRoomStatusToUI(room.status.value)} />
                       <ActionsCell
                         onView={() => handleViewRoom(room.id)}
                         onEdit={() => handleEditRoom(room.id)}

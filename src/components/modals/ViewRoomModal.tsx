@@ -3,19 +3,7 @@ import { RoomResponse } from '@/types/api/room';
 import Modal from '@/components/common/Modal';
 import Button from '@/components/ui/button/Button';
 import { getRoomStatusConfig } from '@/utils/statusColors';
-import { RoomStatusValue, ROOM_STATUS } from '@/types/hotel';
-
-// Mapeo de valores de estado del backend a valores de estado de la UI
-const mapStatusToUI = (backendStatus: string): RoomStatusValue => {
-  const statusMap: Record<string, RoomStatusValue> = {
-    AVAILABLE: ROOM_STATUS.AVAILABLE,
-    UNAVAILABLE: ROOM_STATUS.UNAVAILABLE,
-    CLEANING: ROOM_STATUS.CLEANING,
-    MAINTENANCE: ROOM_STATUS.MAINTENANCE,
-  };
-
-  return statusMap[backendStatus] || ROOM_STATUS.AVAILABLE;
-};
+import { mapRoomStatusToUI } from '@/utils/statusColors';
 
 interface DetailItemProps {
   label: string;
@@ -58,7 +46,7 @@ const ViewRoomModal: React.FC<ViewRoomModalProps> = ({ isOpen, onClose, room, is
     );
   }
 
-  const uiStatus = mapStatusToUI(room.status.value);
+  const uiStatus = mapRoomStatusToUI(room.status.value);
   const { background, text } = getRoomStatusConfig(uiStatus);
 
   const details: DetailItemProps[] = [

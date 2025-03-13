@@ -1,5 +1,22 @@
 import { RoomStatusValue, AppointmentStatusValue } from '@/types/hotel';
 
+// Constantes de estados para UI
+export const ROOM_STATUS = {
+  AVAILABLE: 'Disponible',
+  UNAVAILABLE: 'No Disponible',
+  CLEANING: 'Limpieza',
+  MAINTENANCE: 'Mantenimiento',
+} as const;
+
+export const APPOINTMENT_STATUS = {
+  APPROVED: 'Aprobado',
+  REQUESTED: 'Solicitado',
+  CHECK_IN: 'Check-in',
+  CHECK_OUT: 'Check-out',
+  CANCELED: 'Cancelado',
+  OVERSOLD: 'Sobrevendido',
+} as const;
+
 type StatusColorConfig = {
   background: string;
   text: string;
@@ -8,22 +25,22 @@ type StatusColorConfig = {
 
 // Configuración de colores para estados de habitaciones
 export const ROOM_STATUS_COLORS: Record<RoomStatusValue, StatusColorConfig> = {
-  Disponible: {
+  [ROOM_STATUS.AVAILABLE]: {
     background: 'bg-success-500',
     text: 'text-white',
     border: 'border-success-600',
   },
-  'No Disponible': {
+  [ROOM_STATUS.UNAVAILABLE]: {
     background: 'bg-red-500',
     text: 'text-white',
     border: 'border-red-600',
   },
-  Limpieza: {
+  [ROOM_STATUS.CLEANING]: {
     background: 'bg-orange-500',
     text: 'text-white',
     border: 'border-orange-600',
   },
-  Mantenimiento: {
+  [ROOM_STATUS.MAINTENANCE]: {
     background: 'bg-blue-500',
     text: 'text-white',
     border: 'border-blue-600',
@@ -32,51 +49,75 @@ export const ROOM_STATUS_COLORS: Record<RoomStatusValue, StatusColorConfig> = {
 
 // Configuración de colores para estados de citas/reservas
 export const APPOINTMENT_STATUS_COLORS: Record<AppointmentStatusValue, StatusColorConfig> = {
-  Aprobado: {
+  [APPOINTMENT_STATUS.APPROVED]: {
     background: 'bg-success-500',
     text: 'text-white',
     border: 'border-success-600',
   },
-  Solicitado: {
+  [APPOINTMENT_STATUS.REQUESTED]: {
     background: 'bg-warning-500',
     text: 'text-white',
     border: 'border-warning-600',
   },
-  'Check-in': {
+  [APPOINTMENT_STATUS.CHECK_IN]: {
     background: 'bg-blue-500',
     text: 'text-white',
     border: 'border-blue-600',
   },
-  'Check-out': {
+  [APPOINTMENT_STATUS.CHECK_OUT]: {
     background: 'bg-gray-500',
     text: 'text-white',
     border: 'border-gray-600',
   },
-  Cancelado: {
+  [APPOINTMENT_STATUS.CANCELED]: {
     background: 'bg-red-500',
     text: 'text-white',
     border: 'border-red-600',
   },
-  Sobrevendido: {
+  [APPOINTMENT_STATUS.OVERSOLD]: {
     background: 'bg-gray-500',
     text: 'text-white',
     border: 'border-gray-600',
   },
 } as const;
 
-// Función helper para obtener las clases de color para un estado de habitación
+// Mappers de estados del backend a UI
+export const mapRoomStatusToUI = (backendStatus: string): RoomStatusValue => {
+  const statusMap: Record<string, RoomStatusValue> = {
+    AVAILABLE: ROOM_STATUS.AVAILABLE,
+    UNAVAILABLE: ROOM_STATUS.UNAVAILABLE,
+    CLEANING: ROOM_STATUS.CLEANING,
+    MAINTENANCE: ROOM_STATUS.MAINTENANCE,
+  };
+
+  return statusMap[backendStatus] || ROOM_STATUS.AVAILABLE;
+};
+
+export const mapAppointmentStatusToUI = (backendStatus: string): AppointmentStatusValue => {
+  const statusMap: Record<string, AppointmentStatusValue> = {
+    APPROVED: APPOINTMENT_STATUS.APPROVED,
+    REQUESTED: APPOINTMENT_STATUS.REQUESTED,
+    CHECK_IN: APPOINTMENT_STATUS.CHECK_IN,
+    CHECK_OUT: APPOINTMENT_STATUS.CHECK_OUT,
+    CANCELED: APPOINTMENT_STATUS.CANCELED,
+    OVERSOLD: APPOINTMENT_STATUS.OVERSOLD,
+  };
+
+  return statusMap[backendStatus] || APPOINTMENT_STATUS.REQUESTED;
+};
+
+// Funciones helper para obtener las clases de color
 export const getRoomStatusColors = (status: RoomStatusValue): string => {
   const config = ROOM_STATUS_COLORS[status];
   return `${config.background} ${config.text}`;
 };
 
-// Función helper para obtener las clases de color para un estado de cita/reserva
 export const getAppointmentStatusColors = (status: AppointmentStatusValue): string => {
   const config = APPOINTMENT_STATUS_COLORS[status];
   return `${config.background} ${config.text}`;
 };
 
-// Función helper para obtener la configuración completa de colores
+// Funciones helper para obtener la configuración completa de colores
 export const getRoomStatusConfig = (status: RoomStatusValue): StatusColorConfig => {
   return ROOM_STATUS_COLORS[status];
 };
