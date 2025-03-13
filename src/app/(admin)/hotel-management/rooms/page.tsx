@@ -1,9 +1,12 @@
 'use client';
 
-import React, { useState, useMemo, useCallback, useEffect } from 'react';
-import { toast } from 'react-hot-toast';
+import React, { useEffect } from 'react';
 
-// Componentes
+// Hooks
+import { useRooms } from '@/hooks/useRooms';
+import { useModal } from '@/hooks/useModal';
+
+// Components
 import PageBreadcrumb from '@/components/common/PageBreadCrumb';
 import PageMetadata from '@/components/common/PageMetadata';
 import SearchFilter from '@/components/common/SearchFilter';
@@ -21,34 +24,10 @@ import ViewRoomModal from '@/components/modals/ViewRoomModal';
 import EditRoomModal from '@/components/modals/EditRoomModal';
 import DeleteRoomModal from '@/components/modals/DeleteRoomModal';
 
-// tRPC
-import { trpcClient } from '@/api/trpc';
-import { RoomResponse } from '@/types/api/room';
+// Types
 import { RoomStatusValue } from '@/types/hotel';
 
-interface StatusConfig {
-  label: string;
-}
-
-type StatusKey = string;
-type FilterKey = 'all' | StatusKey;
-
 const ITEMS_PER_PAGE = 10;
-
-const STATUS_CONFIG: Record<string, StatusConfig> = {
-  AVAILABLE: {
-    label: 'Disponible',
-  },
-  UNAVAILABLE: {
-    label: 'No Disponible',
-  },
-  CLEANING: {
-    label: 'Limpieza',
-  },
-  MAINTENANCE: {
-    label: 'Mantenimiento',
-  },
-};
 
 const TABLE_HEADERS = [
   { key: 'number', label: 'Número', minWidth: '100px' },
@@ -72,202 +51,53 @@ const mapStatusToUI = (backendStatus: string): RoomStatusValue => {
 };
 
 const RoomsPage = () => {
-  const [currentPage, setCurrentPage] = useState(1);
-  const [searchTerm, setSearchTerm] = useState('');
-  const [statusFilter, setStatusFilter] = useState<FilterKey>('all');
-  const [floorFilter, setFloorFilter] = useState<string>('all');
-  const [categoryFilter, setCategoryFilter] = useState<string>('all');
-  const [rooms, setRooms] = useState<RoomResponse[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState<Error | null>(null);
-  const [isViewModalOpen, setIsViewModalOpen] = useState(false);
-  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
-  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
-  const [selectedRoom, setSelectedRoom] = useState<RoomResponse | null>(null);
-  const [isLoadingRoom, setIsLoadingRoom] = useState(false);
+  const {
+    currentRooms,
+    filteredRooms,
+    selectedRoom,
+    currentPage,
+    searchTerm,
+    isLoading,
+    isLoadingRoom,
+    error,
+    filters,
+    setCurrentPage,
+    setSearchTerm,
+    fetchRooms,
+    handleRoomAction,
+  } = useRooms();
 
-  const fetchRooms = useCallback(async () => {
-    try {
-      setIsLoading(true);
-      const realResult = await trpcClient.rooms.getByFilter.query({
-        filter: {},
-        deleted: false,
-      });
-      setRooms(realResult);
-      setError(null);
-    } catch (err) {
-      if (err instanceof Error) {
-        setError(err);
-      } else {
-        setError(new Error('Error desconocido'));
-      }
-    } finally {
-      setIsLoading(false);
-    }
-  }, []);
+  const modal = useModal();
 
-  // Cargar habitaciones
   useEffect(() => {
     fetchRooms();
   }, [fetchRooms]);
 
-  const handleViewRoom = useCallback(async (id: string) => {
-    try {
-      setIsLoadingRoom(true);
-      setIsViewModalOpen(true);
+  const handleViewRoom = async (id: string) => {
+    await handleRoomAction(id);
+    modal.open('ROOM_VIEW');
+  };
 
-      const room = await trpcClient.rooms.getById.query({ id, deleted: false });
-      setSelectedRoom(room);
-    } catch (error) {
-      console.error('Error al cargar los detalles de la habitación:', error);
-      toast.error('Error al cargar los detalles de la habitación');
-    } finally {
-      setIsLoadingRoom(false);
-    }
-  }, []);
+  const handleEditRoom = async (id: string) => {
+    await handleRoomAction(id);
+    modal.open('ROOM_EDIT');
+  };
 
-  const handleCloseViewModal = useCallback(() => {
-    setIsViewModalOpen(false);
-    setSelectedRoom(null);
-  }, []);
-
-  const handleEditRoom = useCallback(async (id: string) => {
-    try {
-      setIsLoadingRoom(true);
-      setIsEditModalOpen(true);
-
-      const room = await trpcClient.rooms.getById.query({ id, deleted: false });
-      setSelectedRoom(room);
-    } catch (error) {
-      console.error('Error al cargar los detalles de la habitación:', error);
-      toast.error('Error al cargar los detalles de la habitación');
-    } finally {
-      setIsLoadingRoom(false);
-    }
-  }, []);
-
-  const handleCloseEditModal = useCallback(() => {
-    setIsEditModalOpen(false);
-    setSelectedRoom(null);
-  }, []);
-
-  const handleEditSuccess = useCallback(() => {
-    fetchRooms();
-  }, [fetchRooms]);
-
-  const handleDeleteRoom = useCallback(async (id: string) => {
-    try {
-      setIsLoadingRoom(true);
-      setIsDeleteModalOpen(true);
-
-      const room = await trpcClient.rooms.getById.query({ id, deleted: false });
-      setSelectedRoom(room);
-    } catch (error) {
-      console.error('Error al cargar los detalles de la habitación:', error);
-      toast.error('Error al cargar los detalles de la habitación');
-    } finally {
-      setIsLoadingRoom(false);
-    }
-  }, []);
-
-  const handleCloseDeleteModal = useCallback(() => {
-    setIsDeleteModalOpen(false);
-    setSelectedRoom(null);
-  }, []);
-
-  const handleDeleteSuccess = useCallback(() => {
-    fetchRooms();
-  }, [fetchRooms]);
-
-  const handleCreateRoom = useCallback(() => {
-    // Implementar lógica de crear habitación
-  }, []);
-
-  // Obtener opciones de filtro desde los datos reales
-  const filters = useMemo(() => {
-    const uniqueStatuses = new Set<string>();
-    const uniqueFloors = new Set<string>();
-    const uniqueCategories = new Set<string>();
-
-    rooms.forEach((room: RoomResponse) => {
-      uniqueStatuses.add(room.status.value);
-      uniqueFloors.add(room.floor);
-      uniqueCategories.add(room.category.name);
+  const handleDeleteRoom = async (id: string) => {
+    await handleRoomAction(id);
+    modal.open('ROOM_DELETE', {
+      title: 'Eliminar Habitación',
+      size: 'sm',
+      preventClose: true,
     });
+  };
 
-    return [
-      {
-        id: 'status',
-        label: 'Estado',
-        value: statusFilter,
-        onChange: setStatusFilter,
-        options: [
-          { value: 'all', label: 'Todos los Estados' },
-          ...Array.from(uniqueStatuses).map(value => ({
-            value,
-            label: STATUS_CONFIG[value]?.label || value,
-          })),
-        ],
-      },
-      {
-        id: 'floor',
-        label: 'Piso',
-        value: floorFilter,
-        onChange: setFloorFilter,
-        options: [
-          { value: 'all', label: 'Todos los Pisos' },
-          ...Array.from(uniqueFloors).map(floor => ({
-            value: floor,
-            label: `Piso ${floor}`,
-          })),
-        ],
-      },
-      {
-        id: 'category',
-        label: 'Categoría',
-        value: categoryFilter,
-        onChange: setCategoryFilter,
-        options: [
-          { value: 'all', label: 'Todas las Categorías' },
-          ...Array.from(uniqueCategories).map(category => ({
-            value: category,
-            label: category,
-          })),
-        ],
-      },
-    ];
-  }, [rooms, statusFilter, floorFilter, categoryFilter]);
-
-  // Filtrar habitaciones según búsqueda y filtros
-  const filteredRooms = useMemo(() => {
-    if (!rooms.length) return [];
-
-    const searchLower = searchTerm.toLowerCase();
-    return rooms.filter((room: RoomResponse) => {
-      const matchesSearch =
-        room.number.toString().includes(searchTerm) ||
-        room.category.name.toLowerCase().includes(searchLower) ||
-        room.category.description.toLowerCase().includes(searchLower);
-
-      const matchesStatus = statusFilter === 'all' || room.status.value === statusFilter;
-      const matchesFloor = floorFilter === 'all' || room.floor === floorFilter;
-      const matchesCategory = categoryFilter === 'all' || room.category.name === categoryFilter;
-
-      return matchesSearch && matchesStatus && matchesFloor && matchesCategory;
+  const handleCreateRoom = () => {
+    modal.open('ROOM_CREATE', {
+      title: 'Nueva Habitación',
+      size: 'lg',
     });
-  }, [rooms, searchTerm, statusFilter, floorFilter, categoryFilter]);
-
-  // Ordenar habitaciones por número
-  const sortedRooms = useMemo(
-    () => [...filteredRooms].sort((a, b) => a.number - b.number),
-    [filteredRooms]
-  );
-
-  // Paginación
-  const currentRooms = useMemo(
-    () => sortedRooms.slice((currentPage - 1) * ITEMS_PER_PAGE, currentPage * ITEMS_PER_PAGE),
-    [sortedRooms, currentPage]
-  );
+  };
 
   if (isLoading) {
     return (
@@ -299,28 +129,32 @@ const RoomsPage = () => {
       />
       <PageBreadcrumb pageTitle="Habitaciones" />
 
-      {/* View Modal */}
+      {/* Modals */}
       <ViewRoomModal
-        isOpen={isViewModalOpen}
-        onClose={handleCloseViewModal}
+        isOpen={modal.isModalType('ROOM_VIEW')}
+        onClose={modal.close}
         room={selectedRoom}
         isLoading={isLoadingRoom}
       />
 
-      {/* Edit Modal */}
       <EditRoomModal
-        isOpen={isEditModalOpen}
-        onClose={handleCloseEditModal}
+        isOpen={modal.isModalType('ROOM_EDIT')}
+        onClose={modal.close}
         room={selectedRoom}
-        onSuccess={handleEditSuccess}
+        onSuccess={() => {
+          modal.close();
+          fetchRooms();
+        }}
       />
 
-      {/* Delete Modal */}
       <DeleteRoomModal
-        isOpen={isDeleteModalOpen}
-        onClose={handleCloseDeleteModal}
+        isOpen={modal.isModalType('ROOM_DELETE')}
+        onClose={modal.close}
         room={selectedRoom}
-        onSuccess={handleDeleteSuccess}
+        onSuccess={() => {
+          modal.close();
+          fetchRooms();
+        }}
       />
 
       <div className="flex flex-col gap-5 md:gap-7 2xl:gap-10">
@@ -400,7 +234,7 @@ const RoomsPage = () => {
           <div className="flex items-center justify-between">
             <Pagination
               currentPage={currentPage}
-              totalItems={sortedRooms.length}
+              totalItems={filteredRooms.length}
               itemsPerPage={ITEMS_PER_PAGE}
               onPageChange={setCurrentPage}
             />
