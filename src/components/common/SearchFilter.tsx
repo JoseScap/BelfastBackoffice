@@ -1,31 +1,26 @@
 import { DashboardIcons, IconWrapper } from './icons';
 
-interface FilterOption<T extends string> {
-  value: T;
+interface FilterOption {
+  value: string;
   label: string;
 }
 
-interface FilterConfig<T extends string> {
+interface FilterConfig {
   id: string;
   label: string;
-  value: T;
-  options: FilterOption<T>[];
-  onChange: (value: T) => void;
+  value: string;
+  options: FilterOption[];
+  onChange: (value: string) => void;
 }
 
-interface SearchFilterProps<T extends string> {
+interface SearchFilterProps {
   searchTerm: string;
   onSearchChange: (value: string) => void;
-  filters: FilterConfig<T>[];
+  filters: FilterConfig[];
   totalResults?: number;
 }
 
-const SearchFilter = <T extends string>({
-  searchTerm,
-  onSearchChange,
-  filters,
-  totalResults,
-}: SearchFilterProps<T>) => {
+const SearchFilter = ({ searchTerm, onSearchChange, filters, totalResults }: SearchFilterProps) => {
   return (
     <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
       <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4">
@@ -49,7 +44,7 @@ const SearchFilter = <T extends string>({
             <select
               className="w-full rounded-md border border-stroke bg-transparent py-2 px-4 outline-none focus:border-primary dark:border-strokedark dark:bg-boxdark dark:focus:border-primary"
               value={filter.value}
-              onChange={e => filter.onChange(e.target.value as T)}
+              onChange={e => filter.onChange(e.target.value)}
               aria-label={filter.label}
             >
               {filter.options.map(option => (
