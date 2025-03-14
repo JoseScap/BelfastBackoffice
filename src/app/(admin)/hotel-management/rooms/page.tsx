@@ -11,7 +11,6 @@ import PageBreadcrumb from '@/components/common/PageBreadCrumb';
 import PageMetadata from '@/components/common/PageMetadata';
 import SearchFilter from '@/components/common/SearchFilter';
 import Pagination from '@/components/tables/Pagination';
-import { DashboardIcons, IconWrapper } from '@/components/common/icons';
 import {
   NumberCell,
   CategoryCell,
@@ -23,9 +22,11 @@ import {
 import ViewRoomModal from '@/components/modals/ViewRoomModal';
 import EditRoomModal from '@/components/modals/EditRoomModal';
 import DeleteRoomModal from '@/components/modals/DeleteRoomModal';
+import CreateRoomModal from '@/components/modals/CreateRoomModal';
 
 // Types
 import { mapRoomStatusToUI } from '@/utils/statusColors';
+import { BsPlus } from 'react-icons/bs';
 
 const ITEMS_PER_PAGE = 10;
 
@@ -145,6 +146,15 @@ const RoomsPage = () => {
         }}
       />
 
+      <CreateRoomModal
+        isOpen={modal.isModalType('ROOM_CREATE')}
+        onClose={modal.close}
+        onSuccess={() => {
+          modal.close();
+          fetchRooms();
+        }}
+      />
+
       <div className="flex flex-col gap-5 md:gap-7 2xl:gap-10">
         <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <SearchFilter
@@ -156,13 +166,10 @@ const RoomsPage = () => {
 
           <button
             onClick={handleCreateRoom}
-            className="flex items-center gap-2 rounded-md bg-primary py-2 px-4.5 font-medium text-white hover:bg-opacity-80 focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2"
+            className="flex items-center justify-center gap-2 rounded-md bg-primary p-2 px-4 font-medium bg-blue-600 text-white hover:opacity-80"
             aria-label="Crear nueva habitación"
           >
-            <IconWrapper className="fill-white">
-              <DashboardIcons.Hotel />
-            </IconWrapper>
-            Nueva Habitación
+            Nueva Habitación <BsPlus size={20} />
           </button>
         </div>
 

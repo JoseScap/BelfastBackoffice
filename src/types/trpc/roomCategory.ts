@@ -14,15 +14,9 @@ export const roomCategoryRouter = t.router({
     .mutation(async () => {
       throw new Error('Not implemented');
     }),
-  getAll: t.procedure
-    .input(
-      z.object({
-        deleted: z.boolean(),
-      })
-    )
-    .query(async () => {
-      throw new Error('Not implemented');
-    }),
+  getAll: t.procedure.input(z.boolean()).query(async () => {
+    throw new Error('Not implemented');
+  }),
   getById: t.procedure
     .input(
       z.object({

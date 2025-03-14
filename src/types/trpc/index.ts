@@ -36,7 +36,7 @@ export const appRouter = t.router({
   auth: authRouter,
   status: statusRouter,
   rooms: roomRouter,
-  roomCategory: roomCategoryRouter,
+  roomCategories: roomCategoryRouter,
   roomStatus: roomStatusRouter,
 });
 
