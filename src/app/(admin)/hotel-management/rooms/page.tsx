@@ -1,8 +1,12 @@
 'use client';
 
-import React, { useState, useMemo, useCallback } from 'react';
+import React, { useEffect } from 'react';
 
-// Componentes
+// Hooks
+import { useRooms } from '@/hooks/useRooms';
+import { useModal } from '@/hooks/useModal';
+
+// Components
 import PageBreadcrumb from '@/components/common/PageBreadCrumb';
 import PageMetadata from '@/components/common/PageMetadata';
 import SearchFilter from '@/components/common/SearchFilter';
@@ -13,104 +17,97 @@ import {
   CategoryCell,
   FloorCell,
   CapacityCell,
-  PriceCell,
   RoomStatusCell,
   ActionsCell,
 } from '@/components/tables/TableCells';
+import ViewRoomModal from '@/components/modals/ViewRoomModal';
+import EditRoomModal from '@/components/modals/EditRoomModal';
+import DeleteRoomModal from '@/components/modals/DeleteRoomModal';
 
-// Datos y tipos
-import { mockRooms } from '@/mock-data';
-import { RoomStatusValue } from '@/types/hotel';
-
-interface StatusConfig {
-  label: string;
-}
-
-type StatusKey = RoomStatusValue;
-type FilterKey = 'all' | StatusKey;
+// Types
+import { mapRoomStatusToUI } from '@/utils/statusColors';
 
 const ITEMS_PER_PAGE = 10;
-
-const STATUS_CONFIG: Record<StatusKey, StatusConfig> = {
-  Disponible: {
-    label: 'Disponible',
-  },
-  'No Disponible': {
-    label: 'No Disponible',
-  },
-  Limpieza: {
-    label: 'Limpieza',
-  },
-  Mantenimiento: {
-    label: 'Mantenimiento',
-  },
-};
 
 const TABLE_HEADERS = [
   { key: 'number', label: 'Número', minWidth: '100px' },
   { key: 'category', label: 'Categoría', minWidth: '150px' },
   { key: 'floor', label: 'Piso', minWidth: '100px' },
   { key: 'capacity', label: 'Capacidad', minWidth: '120px' },
-  { key: 'price', label: 'Precio/Noche', minWidth: '120px' },
   { key: 'status', label: 'Estado', minWidth: '120px' },
   { key: 'actions', label: 'Acciones', minWidth: 'auto' },
 ] as const;
 
 const RoomsPage = () => {
-  const [currentPage, setCurrentPage] = useState(1);
-  const [searchTerm, setSearchTerm] = useState('');
-  const [statusFilter, setStatusFilter] = useState<FilterKey>('all');
+  const {
+    currentRooms,
+    filteredRooms,
+    selectedRoom,
+    currentPage,
+    searchTerm,
+    isLoading,
+    isLoadingRoom,
+    error,
+    filters,
+    setCurrentPage,
+    setSearchTerm,
+    fetchRooms,
+    handleRoomAction,
+  } = useRooms();
 
-  const handleViewRoom = useCallback((id: string) => {
-    console.log('Ver habitación:', id);
-  }, []);
+  const modal = useModal();
 
-  const handleEditRoom = useCallback((id: string) => {
-    console.log('Editar habitación:', id);
-  }, []);
+  useEffect(() => {
+    fetchRooms();
+  }, [fetchRooms]);
 
-  const handleDeleteRoom = useCallback((id: string) => {
-    console.log('Eliminar habitación:', id);
-  }, []);
+  const handleViewRoom = async (id: string) => {
+    await handleRoomAction(id);
+    modal.open('ROOM_VIEW');
+  };
 
-  const handleCreateRoom = useCallback(() => {
-    console.log('Crear nueva habitación');
-  }, []);
+  const handleEditRoom = async (id: string) => {
+    await handleRoomAction(id);
+    modal.open('ROOM_EDIT');
+  };
 
-  const filteredRooms = useMemo(() => {
-    const searchLower = searchTerm.toLowerCase();
-    return mockRooms.filter(room => {
-      const matchesSearch =
-        room.number.toString().includes(searchTerm) ||
-        room.category.name.toLowerCase().includes(searchLower) ||
-        room.category.description.toLowerCase().includes(searchLower);
-
-      const matchesStatus = statusFilter === 'all' || room.status.value === statusFilter;
-
-      return matchesSearch && matchesStatus;
+  const handleDeleteRoom = async (id: string) => {
+    await handleRoomAction(id);
+    modal.open('ROOM_DELETE', {
+      title: 'Eliminar Habitación',
+      size: 'sm',
+      preventClose: true,
     });
-  }, [searchTerm, statusFilter]);
+  };
 
-  const sortedRooms = useMemo(
-    () => [...filteredRooms].sort((a, b) => a.number - b.number),
-    [filteredRooms]
-  );
+  const handleCreateRoom = () => {
+    modal.open('ROOM_CREATE', {
+      title: 'Nueva Habitación',
+      size: 'lg',
+    });
+  };
 
-  const currentRooms = useMemo(
-    () => sortedRooms.slice((currentPage - 1) * ITEMS_PER_PAGE, currentPage * ITEMS_PER_PAGE),
-    [sortedRooms, currentPage]
-  );
+  if (isLoading) {
+    return (
+      <div className="flex flex-col items-center justify-center min-h-[400px]">
+        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-primary"></div>
+      </div>
+    );
+  }
 
-  const statusOptions = useMemo(
-    () => [
-      { value: 'all' as const, label: 'Todos los Estados' },
-      ...Object.entries(STATUS_CONFIG).map(([value, { label }]) => ({
-        value: value as StatusKey,
-        label,
-      })),
-    ],
-    []
-  );
+  if (error) {
+    return (
+      <div className="flex flex-col items-center justify-center min-h-[400px] gap-4">
+        <div className="text-red-500">Error al cargar habitaciones: {error.message}</div>
+        <button
+          onClick={() => window.location.reload()}
+          className="mt-4 px-4 py-2 bg-primary text-white rounded hover:bg-opacity-80"
+        >
+          Reintentar
+        </button>
+      </div>
+    );
+  }
 
   return (
     <>
@@ -120,14 +117,40 @@ const RoomsPage = () => {
       />
       <PageBreadcrumb pageTitle="Habitaciones" />
 
+      {/* Modals */}
+      <ViewRoomModal
+        isOpen={modal.isModalType('ROOM_VIEW')}
+        onClose={modal.close}
+        room={selectedRoom}
+        isLoading={isLoadingRoom}
+      />
+
+      <EditRoomModal
+        isOpen={modal.isModalType('ROOM_EDIT')}
+        onClose={modal.close}
+        room={selectedRoom}
+        onSuccess={() => {
+          modal.close();
+          fetchRooms();
+        }}
+      />
+
+      <DeleteRoomModal
+        isOpen={modal.isModalType('ROOM_DELETE')}
+        onClose={modal.close}
+        room={selectedRoom}
+        onSuccess={() => {
+          modal.close();
+          fetchRooms();
+        }}
+      />
+
       <div className="flex flex-col gap-5 md:gap-7 2xl:gap-10">
         <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-          <SearchFilter<FilterKey>
+          <SearchFilter
             searchTerm={searchTerm}
             onSearchChange={setSearchTerm}
-            filterValue={statusFilter}
-            onFilterChange={setStatusFilter}
-            filterOptions={statusOptions}
+            filters={filters}
             totalResults={filteredRooms.length}
           />
 
@@ -162,37 +185,49 @@ const RoomsPage = () => {
                 </tr>
               </thead>
               <tbody>
-                {currentRooms.map(room => (
-                  <tr key={room.id}>
-                    <NumberCell number={room.number} />
-                    <CategoryCell
-                      name={room.category.name}
-                      description={room.category.description}
-                    />
-                    <FloorCell floor={room.floor} />
-                    <CapacityCell capacity={room.capacity} />
-                    <PriceCell amount={room.category.price} />
-                    <RoomStatusCell status={room.status.value} />
-                    <ActionsCell
-                      onView={() => handleViewRoom(room.id)}
-                      onEdit={() => handleEditRoom(room.id)}
-                      onDelete={() => handleDeleteRoom(room.id)}
-                    />
+                {currentRooms.length > 0 ? (
+                  currentRooms.map(room => (
+                    <tr key={room.id}>
+                      <NumberCell number={room.number} />
+                      <CategoryCell
+                        name={room.category.name}
+                        description={room.category.description}
+                      />
+                      <FloorCell floor={parseInt(room.floor)} />
+                      <CapacityCell capacity={room.category.capacity} />
+                      <RoomStatusCell status={mapRoomStatusToUI(room.status.value)} />
+                      <ActionsCell
+                        onView={() => handleViewRoom(room.id)}
+                        onEdit={() => handleEditRoom(room.id)}
+                        onDelete={() => handleDeleteRoom(room.id)}
+                      />
+                    </tr>
+                  ))
+                ) : (
+                  <tr>
+                    <td
+                      colSpan={TABLE_HEADERS.length}
+                      className="py-4 px-4 text-center text-gray-500"
+                    >
+                      No se encontraron habitaciones
+                    </td>
                   </tr>
-                ))}
+                )}
               </tbody>
             </table>
           </div>
         </div>
 
-        <div className="flex items-center justify-between">
-          <Pagination
-            currentPage={currentPage}
-            totalItems={sortedRooms.length}
-            itemsPerPage={ITEMS_PER_PAGE}
-            onPageChange={setCurrentPage}
-          />
-        </div>
+        {currentRooms.length > 0 && (
+          <div className="flex items-center justify-between">
+            <Pagination
+              currentPage={currentPage}
+              totalItems={filteredRooms.length}
+              itemsPerPage={ITEMS_PER_PAGE}
+              onPageChange={setCurrentPage}
+            />
+          </div>
+        )}
       </div>
     </>
   );

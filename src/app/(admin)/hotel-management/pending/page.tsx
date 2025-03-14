@@ -113,15 +113,21 @@ const PendingRequestsPage = () => {
                   Solicitudes de reserva que requieren aprobación
                 </p>
               </div>
-              <SearchFilter<PriorityKey>
+              <SearchFilter
                 searchTerm={searchTerm}
                 onSearchChange={setSearchTerm}
-                filterValue="high"
-                onFilterChange={() => {}}
-                filterOptions={[
-                  { value: 'high', label: 'Alta' },
-                  { value: 'medium', label: 'Media' },
-                  { value: 'low', label: 'Baja' },
+                filters={[
+                  {
+                    id: 'priority',
+                    label: 'Prioridad',
+                    value: 'high',
+                    onChange: () => {},
+                    options: [
+                      { value: 'high', label: 'Alta' },
+                      { value: 'medium', label: 'Media' },
+                      { value: 'low', label: 'Baja' },
+                    ],
+                  },
                 ]}
               />
             </div>

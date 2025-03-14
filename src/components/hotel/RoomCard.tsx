@@ -2,10 +2,10 @@
 
 import React from 'react';
 import { Room } from '@/types/hotel';
+import { getRoomStatusConfig } from '@/utils/statusColors';
 
 type RoomCardProps = {
   room: Room;
-  statusBackground: string;
   categoryColor: string;
   onDragStart: (e: React.DragEvent<HTMLDivElement>, roomId: string) => void;
 };
@@ -14,16 +14,13 @@ type RoomCardProps = {
  * Componente que muestra una tarjeta de habitación con información básica
  * y soporte para arrastrar y soltar.
  */
-const RoomCard: React.FC<RoomCardProps> = ({
-  room,
-  statusBackground,
-  categoryColor,
-  onDragStart,
-}) => {
+const RoomCard: React.FC<RoomCardProps> = ({ room, categoryColor, onDragStart }) => {
   // Función para manejar el inicio del arrastre
   const handleDragStart = (e: React.DragEvent<HTMLDivElement>) => {
     onDragStart(e, room.id);
   };
+
+  const statusConfig = getRoomStatusConfig(room.status.value);
 
   return (
     <div
@@ -32,7 +29,7 @@ const RoomCard: React.FC<RoomCardProps> = ({
       className="relative flex flex-col rounded-sm border border-stroke bg-white p-3 shadow-default dark:border-strokedark dark:bg-boxdark mb-3 cursor-move hover:shadow-md transition-shadow duration-200"
       title={`Categoría: ${room.category.name} - Capacidad: ${room.capacity} personas`}
     >
-      <div className={`absolute right-2 top-2 h-3 w-3 rounded-full ${statusBackground}`} />
+      <div className={`absolute right-2 top-2 h-3 w-3 rounded-full ${statusConfig.background}`} />
       <div
         className="absolute left-0 top-0 h-1 w-full rounded-t-sm"
         style={{ backgroundColor: categoryColor }}
@@ -45,7 +42,7 @@ const RoomCard: React.FC<RoomCardProps> = ({
       </p>
       <div className="mt-2 flex items-center justify-between">
         <span
-          className={`rounded-full px-2 py-1 text-xs font-medium ${statusBackground} text-white`}
+          className={`rounded-full px-2 py-1 text-xs font-medium ${statusConfig.background} ${statusConfig.text}`}
           title={room.status.description}
         >
           {room.status.value}

@@ -4,11 +4,11 @@ import React, { useState, useMemo } from 'react';
 import { Room, RoomStatusValue } from '@/types/hotel';
 import RoomCard from './RoomCard';
 import StatusCounter from '../common/StatusCounter';
+import { getRoomStatusConfig } from '@/utils/statusColors';
 
 type StatusColumnProps = {
   status: RoomStatusValue;
   rooms: Room[];
-  statusBackground: string;
   getCategoryColor: (categoryName: string) => string;
   onMoveRoom: (roomId: string, newStatus: RoomStatusValue) => void;
   pendingOperationsCount: number;
@@ -22,13 +22,13 @@ type StatusColumnProps = {
 const StatusColumn: React.FC<StatusColumnProps> = ({
   status,
   rooms,
-  statusBackground,
   getCategoryColor,
   onMoveRoom,
   pendingOperationsCount,
   onDragStart,
 }) => {
   const [isOver, setIsOver] = useState(false);
+  const statusConfig = getRoomStatusConfig(status);
 
   // Funciones para manejar eventos de arrastre
   const handleDragOver = (e: React.DragEvent<HTMLDivElement>) => {
@@ -58,7 +58,7 @@ const StatusColumn: React.FC<StatusColumnProps> = ({
   return (
     <div className="flex flex-col h-full border border-stroke rounded-md overflow-hidden shadow-sm dark:border-strokedark">
       <h3
-        className={`text-lg font-semibold p-3 ${statusBackground} text-white flex items-center justify-between`}
+        className={`text-lg font-semibold p-3 ${statusConfig.background} ${statusConfig.text} flex items-center justify-between`}
         title={statusDescription}
       >
         <span>{status}</span>
@@ -88,7 +88,6 @@ const StatusColumn: React.FC<StatusColumnProps> = ({
               <RoomCard
                 key={room.id}
                 room={room}
-                statusBackground={statusBackground}
                 categoryColor={getCategoryColor(room.category.name)}
                 onDragStart={onDragStart}
               />

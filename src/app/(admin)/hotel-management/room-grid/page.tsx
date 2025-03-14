@@ -6,7 +6,6 @@ import PageBreadcrumb from '@/components/common/PageBreadCrumb';
 import { mockRooms } from '@/mock-data';
 import { ROOM_STATUS, Room, RoomStatusValue } from '@/types/hotel';
 import PageMetadata from '@/components/common/PageMetadata';
-import { getRoomStatusConfig } from '@/utils/statusColors';
 import { FloorSelect, DateSelect } from '@/components/common/SelectControls';
 import { toast } from 'react-hot-toast';
 import PendingCounter from '@/components/common/PendingCounter';
@@ -245,21 +244,17 @@ export default function RoomGridPage() {
           </h4>
 
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-            {Object.values(ROOM_STATUS).map(status => {
-              const { background } = getRoomStatusConfig(status);
-              return (
-                <StatusColumn
-                  key={status}
-                  status={status}
-                  rooms={roomsByStatus[status] || []}
-                  statusBackground={background}
-                  getCategoryColor={getCategoryColor}
-                  onMoveRoom={handleMoveRoom}
-                  pendingOperationsCount={pendingOperationsByStatus[status] || 0}
-                  onDragStart={handleDragStart}
-                />
-              );
-            })}
+            {Object.values(ROOM_STATUS).map(status => (
+              <StatusColumn
+                key={status}
+                status={status}
+                rooms={roomsByStatus[status]}
+                getCategoryColor={getCategoryColor}
+                onMoveRoom={handleMoveRoom}
+                pendingOperationsCount={pendingOperationsByStatus[status]}
+                onDragStart={handleDragStart}
+              />
+            ))}
           </div>
         </div>
       </div>

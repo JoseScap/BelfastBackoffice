@@ -8,6 +8,7 @@ import { SidebarProvider } from '@/context/SidebarContext';
 import { ThemeProvider } from '@/context/ThemeContext';
 import { AuthProvider } from '@/context/AuthContext';
 import { Toaster } from 'react-hot-toast';
+import { ModalProvider } from '@/components/providers/ModalProvider';
 
 const outfit = Outfit({
   variable: '--font-outfit-sans',
@@ -25,8 +26,10 @@ export default function RootLayout({
         <ThemeProvider>
           <AuthProvider>
             <SidebarProvider>
-              {children}
-              <Toaster position="bottom-right" />
+              <ModalProvider>
+                {children}
+                <Toaster position="bottom-right" />
+              </ModalProvider>
             </SidebarProvider>
           </AuthProvider>
         </ThemeProvider>

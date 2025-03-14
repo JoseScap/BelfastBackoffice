@@ -1,8 +1,5 @@
 'use client';
 import React, { useEffect } from 'react';
-import UserAddressCard from '@/components/user-profile/UserAddressCard';
-import UserInfoCard from '@/components/user-profile/UserInfoCard';
-import UserMetaCard from '@/components/user-profile/UserMetaCard';
 import { useAuth } from '@/context/AuthContext';
 import { useRouter } from 'next/navigation';
 import PageMetadata from '@/components/common/PageMetadata';
@@ -37,12 +34,6 @@ export default function Profile() {
         <p className="text-sm font-medium text-gray-500 dark:text-gray-400">
           Manage your personal information and preferences
         </p>
-      </div>
-
-      <div className="grid grid-cols-1 gap-6 lg:gap-8">
-        <UserMetaCard />
-        <UserInfoCard />
-        <UserAddressCard />
       </div>
     </div>
   );
