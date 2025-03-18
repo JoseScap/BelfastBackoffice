@@ -16,7 +16,7 @@ interface FilterConfig {
 interface SearchFilterProps {
   searchTerm: string;
   onSearchChange: (value: string) => void;
-  filters: FilterConfig[];
+  filters?: FilterConfig[];
   totalResults?: number;
 }
 
@@ -39,22 +39,23 @@ const SearchFilter = ({ searchTerm, onSearchChange, filters, totalResults }: Sea
           </span>
         </div>
 
-        {filters.map(filter => (
-          <div key={filter.id} className="w-full sm:w-auto">
-            <select
-              className="w-full rounded-md border border-stroke bg-transparent py-2 px-4 outline-none focus:border-primary dark:border-strokedark dark:bg-boxdark dark:focus:border-primary"
-              value={filter.value}
-              onChange={e => filter.onChange(e.target.value)}
-              aria-label={filter.label}
-            >
-              {filter.options.map(option => (
-                <option key={option.value} value={option.value}>
-                  {option.label}
-                </option>
-              ))}
-            </select>
-          </div>
-        ))}
+        {filters &&
+          filters.map(filter => (
+            <div key={filter.id} className="w-full sm:w-auto">
+              <select
+                className="w-full rounded-md border border-stroke bg-transparent py-2 px-4 outline-none focus:border-primary dark:border-strokedark dark:bg-boxdark dark:focus:border-primary"
+                value={filter.value}
+                onChange={e => filter.onChange(e.target.value)}
+                aria-label={filter.label}
+              >
+                {filter.options.map(option => (
+                  <option key={option.value} value={option.value}>
+                    {option.label}
+                  </option>
+                ))}
+              </select>
+            </div>
+          ))}
       </div>
 
       {totalResults !== undefined && (

@@ -1,66 +1,147 @@
 'use client';
 
-import React, { useState, useMemo, useRef, useCallback, useEffect } from 'react';
-import { v4 as uuidv4 } from 'uuid';
-import PageBreadcrumb from '@/components/common/PageBreadCrumb';
-import { mockRooms } from '@/mock-data';
-import { ROOM_STATUS, Room, RoomStatusValue } from '@/types/hotel';
-import PageMetadata from '@/components/common/PageMetadata';
-import { FloorSelect, DateSelect } from '@/components/common/SelectControls';
+import React, { useState, useMemo, useCallback, useEffect } from 'react';
 import { toast } from 'react-hot-toast';
+import { trpcClient } from '@/api/trpc';
+import PageBreadcrumb from '@/components/common/PageBreadCrumb';
+import PageMetadata from '@/components/common/PageMetadata';
+import { DateSelect } from '@/components/common/SelectControls';
 import PendingCounter from '@/components/common/PendingCounter';
 import StatusColumn from '@/components/hotel/StatusColumn';
+import SearchFilter from '@/components/common/SearchFilter';
+import { useRooms } from '@/hooks/useRooms';
+import { RoomStatusValue, Room, RoomCategory } from '@/types/hotel';
+import { RoomResponse } from '@/types/api/room';
+import { ROOM_STATUS, mapRoomStatusToUI } from '@/utils/statusColors';
+
+// Función para mapear estados de UI a estados del backend
+const mapUIStatusToBackend = (uiStatus: RoomStatusValue): string => {
+  switch (uiStatus) {
+    case 'Disponible':
+      return 'AVAILABLE';
+    case 'No Disponible':
+      return 'UNAVAILABLE';
+    case 'Limpieza':
+      return 'CLEANING';
+    case 'Mantenimiento':
+      return 'MAINTENANCE';
+    default:
+      return uiStatus;
+  }
+};
 
 // Tipo para las operaciones en cola
 type QueuedOperation = {
-  id: string; // ID único para la operación
+  id: string;
   roomId: string;
   newStatus: RoomStatusValue;
   previousStatus: RoomStatusValue;
   roomNumber: number;
-  timestamp: number; // Timestamp para ordenar las operaciones
-  status: 'pending' | 'loading' | 'success' | 'error'; // Estado de la operación
+  timestamp: number;
+  status: 'pending' | 'loading' | 'success' | 'error';
 };
 
+// Función para adaptar la categoría de la habitación
+const adaptRoomCategory = (category: RoomResponse['category']): RoomCategory => ({
+  ...category,
+  price: 0, // Este valor debería venir del backend
+  images: [], // Este valor debería venir del backend
+});
+
+// Función para adaptar RoomResponse a Room
+const adaptRoomResponseToRoom = (room: RoomResponse): Room => ({
+  id: room.id,
+  number: room.number,
+  floor: parseInt(room.floor),
+  capacity: 2, // Valor por defecto
+  beds: {
+    single: 1,
+    double: 0,
+    queen: 0,
+    king: 0,
+  },
+  status: {
+    id: room.status.id,
+    description: room.status.description,
+    value: mapRoomStatusToUI(room.status.value),
+  },
+  category: adaptRoomCategory(room.category),
+});
+
 export default function RoomGridPage() {
-  const [selectedFloor, setSelectedFloor] = useState<number | null>(null);
   const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split('T')[0]);
-  const [rooms, setRooms] = useState<Room[]>(mockRooms);
-  const [searchTerm, setSearchTerm] = useState('');
-
-  // Cola de operaciones pendientes
   const [operations, setOperations] = useState<QueuedOperation[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [temporaryRooms, setTemporaryRooms] = useState<Room[]>([]);
 
-  // Referencia para los timeouts
-  const timeoutsRef = useRef<Record<string, NodeJS.Timeout>>({});
+  // Obtener habitaciones usando el hook
+  const { rooms, searchTerm, setSearchTerm, floorFilter, setFloorFilter, fetchRooms } = useRooms();
 
-  // Manejar el inicio del arrastre
-  const handleDragStart = useCallback((e: React.DragEvent<HTMLDivElement>, roomId: string) => {
-    e.dataTransfer.setData('roomId', roomId);
-    e.dataTransfer.effectAllowed = 'move';
-  }, []);
+  // Obtener pisos únicos de las habitaciones y filtrar habitaciones por piso
+  const { floors, filteredRooms } = useMemo(() => {
+    const uniqueFloors = [...new Set(rooms.map(room => room.floor))].sort();
+    const currentFloor = floorFilter || '1';
+    const baseRooms = rooms
+      .filter(room => room.floor === currentFloor)
+      .map(adaptRoomResponseToRoom);
 
-  // Calcular operaciones pendientes (status: pending o loading)
+    // Aplicar cambios temporales si existen
+    const updatedRooms = baseRooms.map(room => {
+      const tempRoom = temporaryRooms.find(tr => tr.id === room.id);
+      return tempRoom || room;
+    });
+
+    return {
+      floors: uniqueFloors.length > 0 ? uniqueFloors : ['1'],
+      filteredRooms: updatedRooms,
+    };
+  }, [rooms, floorFilter, temporaryRooms]);
+
+  // Inicialización
+  useEffect(() => {
+    const initialize = async () => {
+      try {
+        setIsLoading(true);
+        // Primero establecemos el piso inicial
+        const initialFloor = '1';
+        setFloorFilter(initialFloor);
+
+        // Luego hacemos el fetch con ese piso
+        await fetchRooms();
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    initialize();
+  }, [fetchRooms, setFloorFilter]); // Solo se ejecuta una vez al montar el componente
+
+  // Recargar cuando cambie el piso
+  useEffect(() => {
+    const loadRooms = async () => {
+      if (floorFilter) {
+        try {
+          // Solo mostrar loading si no hay datos
+          if (rooms.length === 0) {
+            setIsLoading(true);
+          }
+          await fetchRooms();
+        } finally {
+          setIsLoading(false);
+        }
+      }
+    };
+
+    loadRooms();
+  }, [floorFilter, fetchRooms, rooms.length]);
+
+  // Calcular operaciones pendientes
   const pendingOperations = useMemo(() => {
     return operations.filter(op => op.status === 'pending' || op.status === 'loading');
   }, [operations]);
 
   // Procesar datos
-  const { floors, roomsByStatus, pendingOperationsByStatus } = useMemo(() => {
-    const uniqueFloors = [...new Set(rooms.map(room => room.floor))].sort((a, b) => a - b);
-    const currentFloor = selectedFloor !== null ? selectedFloor : uniqueFloors[0];
-
-    // Filtrar por piso y término de búsqueda global
-    let filteredRooms = rooms.filter(room => room.floor === currentFloor);
-
-    if (searchTerm) {
-      filteredRooms = filteredRooms.filter(
-        room =>
-          room.number.toString().includes(searchTerm) ||
-          room.category.name.toLowerCase().includes(searchTerm.toLowerCase())
-      );
-    }
-
+  const { roomsByStatus, pendingOperationsByStatus } = useMemo(() => {
     // Agrupar habitaciones por estado
     const groupedRooms = Object.values(ROOM_STATUS).reduce((acc, status) => {
       acc[status] = [];
@@ -78,16 +159,18 @@ export default function RoomGridPage() {
       pendingByStatus[op.newStatus] = (pendingByStatus[op.newStatus] || 0) + 1;
     });
 
+    // Agrupar habitaciones filtradas por estado
     filteredRooms.forEach(room => {
-      groupedRooms[room.status.value].push(room);
+      if (groupedRooms[room.status.value]) {
+        groupedRooms[room.status.value].push(room);
+      }
     });
 
     return {
-      floors: uniqueFloors,
       roomsByStatus: groupedRooms,
       pendingOperationsByStatus: pendingByStatus,
     };
-  }, [rooms, selectedFloor, pendingOperations, searchTerm]);
+  }, [filteredRooms, pendingOperations]);
 
   // Función para generar color para categorías
   const getCategoryColor = useCallback((categoryName: string): string => {
@@ -99,22 +182,15 @@ export default function RoomGridPage() {
     return `#${'00000'.substring(0, 6 - c.length)}${c}`;
   }, []);
 
-  const currentFloor = selectedFloor ?? floors[0];
-
-  // Efecto para procesar las operaciones pendientes
-  useEffect(() => {
-    // Cleanup function for timeouts
-    const currentTimeouts = timeoutsRef.current;
-
-    return () => {
-      // Clear all timeouts on cleanup
-      Object.values(currentTimeouts).forEach(timeout => clearTimeout(timeout));
-    };
+  // Manejar el inicio del arrastre
+  const handleDragStart = useCallback((e: React.DragEvent<HTMLDivElement>, roomId: string) => {
+    e.dataTransfer.setData('roomId', roomId);
+    e.dataTransfer.effectAllowed = 'move';
   }, []);
 
   // Manejar el movimiento de habitaciones
   const handleMoveRoom = useCallback(
-    (roomId: string, newStatus: RoomStatusValue) => {
+    async (roomId: string, newStatus: RoomStatusValue) => {
       // Encontrar la habitación
       const roomToMove = rooms.find(room => room.id === roomId);
 
@@ -134,62 +210,83 @@ export default function RoomGridPage() {
         return;
       }
 
-      // Actualizar estado (actualización optimista)
-      const newRooms = [...rooms];
-      const roomIndex = newRooms.findIndex(room => room.id === roomId);
+      // Crear ID único para la operación
+      const operationId = crypto.randomUUID();
+      const previousStatus = mapRoomStatusToUI(roomToMove.status.value);
 
-      if (roomIndex === -1) {
-        toast.error('Error al actualizar la habitación');
-        return;
-      }
-
-      // Guardar estado anterior para posible rollback
-      const previousStatus = newRooms[roomIndex].status.value;
-
-      // Actualizar habitación inmediatamente (optimista)
-      newRooms[roomIndex] = {
-        ...newRooms[roomIndex],
+      // Actualizar estado temporal inmediatamente
+      const updatedRoom: Room = {
+        ...adaptRoomResponseToRoom(roomToMove),
         status: {
-          ...newRooms[roomIndex].status,
+          ...roomToMove.status,
           value: newStatus,
         },
       };
 
-      // Actualizar estado
-      setRooms(newRooms);
+      // Actualizar estado temporal y operaciones de manera atómica
+      setTemporaryRooms(prev => [...prev.filter(r => r.id !== roomId), updatedRoom]);
+      setOperations(prev => [
+        ...prev,
+        {
+          id: operationId,
+          roomId,
+          newStatus,
+          previousStatus,
+          roomNumber: roomToMove.number,
+          timestamp: Date.now(),
+          status: 'loading',
+        },
+      ]);
 
-      // Crear ID único para la operación
-      const operationId = uuidv4();
+      try {
+        // Convertir el estado de UI al valor del backend
+        const backendStatus = mapUIStatusToBackend(newStatus);
 
-      // Añadir operación a la cola con ID único
-      const newOperation: QueuedOperation = {
-        id: operationId,
-        roomId,
-        newStatus,
-        previousStatus,
-        roomNumber: roomToMove.number,
-        timestamp: Date.now(),
-        status: 'pending',
-      };
+        // Actualizar en el backend
+        await trpcClient.rooms.updateStatus.mutate({
+          id: roomId,
+          statusValue: backendStatus,
+        });
 
-      // Actualizar la cola de operaciones
-      setOperations(prev => [...prev, newOperation]);
+        // Actualizar operación a success
+        setOperations(prev =>
+          prev.map(op => (op.id === operationId ? { ...op, status: 'success' } : op))
+        );
 
-      // Mostrar toast de carga
-      const toastId = toast.loading(`Actualizando habitación ${roomToMove.number}...`);
+        // Limpiar después de un corto tiempo
+        setTimeout(() => {
+          setOperations(prev => prev.filter(op => op.id !== operationId));
+          setTemporaryRooms(prev => prev.filter(room => room.id !== roomId));
 
-      // Simular API - 3 segundos
-      setTimeout(() => {
-        // Actualización exitosa
-        toast.dismiss(toastId);
-        toast.success(`Habitación ${roomToMove.number} actualizada a ${newStatus}`);
+          // Hacer un fetch silencioso después de limpiar el estado temporal
+          fetchRooms().catch(console.error);
+        }, 2000);
+      } catch (error) {
+        // Revertir el cambio temporal inmediatamente
+        setTemporaryRooms(prev => prev.filter(room => room.id !== roomId));
+        setOperations(prev =>
+          prev.map(op => (op.id === operationId ? { ...op, status: 'error' } : op))
+        );
 
-        // Eliminar la operación de la cola
-        setOperations(prev => prev.filter(op => op.id !== operationId));
-      }, 3000);
+        toast.error('Error al actualizar la habitación');
+        console.error('Error updating room:', error);
+
+        // Limpiar operación de error después de un corto tiempo
+        setTimeout(() => {
+          setOperations(prev => prev.filter(op => op.id !== operationId));
+        }, 500);
+      }
     },
-    [rooms, pendingOperations]
+    [rooms, pendingOperations.length, fetchRooms]
   );
+
+  // Mapear los estados del backend a los estados de UI
+  const uiStatuses = useMemo(() => {
+    return Object.values(ROOM_STATUS).map(status => ({
+      value: status,
+      label: status,
+    }));
+  }, []);
 
   return (
     <>
@@ -200,62 +297,56 @@ export default function RoomGridPage() {
       <PageBreadcrumb pageTitle="Cuadrícula de Habitaciones" />
       <div className="flex flex-col gap-5 md:gap-7 2xl:gap-10">
         {/* Controls */}
-        <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+        <div className="flex flex-col gap-4">
+          <SearchFilter
+            searchTerm={searchTerm}
+            onSearchChange={setSearchTerm}
+            filters={[
+              {
+                id: 'floor',
+                label: 'Piso',
+                value: floorFilter || floors[0],
+                onChange: setFloorFilter,
+                options: floors.map(floor => ({
+                  value: floor,
+                  label: `Piso ${floor}`,
+                })),
+              },
+            ]}
+          />
           <div className="flex items-center gap-4">
-            <div className="w-full sm:w-auto">
-              <FloorSelect value={currentFloor} floors={floors} onChange={setSelectedFloor} />
-            </div>
             <div className="w-full sm:w-auto">
               <DateSelect value={selectedDate} onChange={setSelectedDate} />
             </div>
-            <div className="w-full sm:w-auto">
-              <input
-                type="text"
-                placeholder="Buscar habitación..."
-                value={searchTerm}
-                onChange={e => setSearchTerm(e.target.value)}
-                className="w-full px-3 py-2 text-sm border border-stroke rounded dark:border-strokedark dark:bg-boxdark"
-              />
-            </div>
-          </div>
-
-          <div className="flex items-center gap-4">
             <PendingCounter count={pendingOperations.length} />
-            <button className="flex items-center gap-2 rounded-md bg-primary py-2 px-4.5 font-medium text-white hover:bg-opacity-80">
-              <svg
-                className="fill-white"
-                width="16"
-                height="16"
-                viewBox="0 0 16 16"
-                fill="none"
-                xmlns="http://www.w3.org/2000/svg"
-              >
-                <path d="M14.3333 7.33333V3.33333C14.3333 2.96667 14.0333 2.66667 13.6667 2.66667H10.3333C9.96667 2.66667 9.66667 2.96667 9.66667 3.33333V7.33333C9.66667 7.7 9.96667 8 10.3333 8H13.6667C14.0333 8 14.3333 7.7 14.3333 7.33333ZM14.3333 12.6667V10C14.3333 9.63333 14.0333 9.33333 13.6667 9.33333H10.3333C9.96667 9.33333 9.66667 9.63333 9.66667 10V12.6667C9.66667 13.0333 9.96667 13.3333 10.3333 13.3333H13.6667C14.0333 13.3333 14.3333 13.0333 14.3333 12.6667ZM6.33333 12.6667V8.66667C6.33333 8.3 6.03333 8 5.66667 8H2.33333C1.96667 8 1.66667 8.3 1.66667 8.66667V12.6667C1.66667 13.0333 1.96667 13.3333 2.33333 13.3333H5.66667C6.03333 13.3333 6.33333 13.0333 6.33333 12.6667ZM6.33333 3.33333V5.33333C6.33333 5.7 6.03333 6 5.66667 6H2.33333C1.96667 6 1.66667 5.7 1.66667 5.33333V3.33333C1.66667 2.96667 1.96667 2.66667 2.33333 2.66667H5.66667C6.03333 2.66667 6.33333 2.96667 6.33333 3.33333Z" />
-              </svg>
-              Vista de Impresión
-            </button>
           </div>
         </div>
 
         {/* Room Grid with Drag and Drop */}
         <div className="rounded-sm border border-stroke bg-white p-4 shadow-default dark:border-strokedark dark:bg-boxdark">
           <h4 className="mb-6 text-xl font-semibold text-black dark:text-white">
-            Piso {currentFloor} - {selectedDate}
+            Piso {floorFilter || floors[0]} - {selectedDate}
           </h4>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-            {Object.values(ROOM_STATUS).map(status => (
-              <StatusColumn
-                key={status}
-                status={status}
-                rooms={roomsByStatus[status]}
-                getCategoryColor={getCategoryColor}
-                onMoveRoom={handleMoveRoom}
-                pendingOperationsCount={pendingOperationsByStatus[status]}
-                onDragStart={handleDragStart}
-              />
-            ))}
-          </div>
+          {isLoading ? (
+            <div className="flex items-center justify-center min-h-[600px]">
+              <div className="w-8 h-8 border-4 border-primary border-t-transparent rounded-full animate-spin"></div>
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+              {uiStatuses.map(status => (
+                <StatusColumn
+                  key={status.value}
+                  status={status.value}
+                  rooms={roomsByStatus[status.value] || []}
+                  getCategoryColor={getCategoryColor}
+                  onMoveRoom={handleMoveRoom}
+                  pendingOperationsCount={pendingOperationsByStatus[status.value] || 0}
+                  onDragStart={handleDragStart}
+                />
+              ))}
+            </div>
+          )}
         </div>
       </div>
     </>
