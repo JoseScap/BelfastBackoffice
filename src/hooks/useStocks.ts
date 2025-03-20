@@ -1,7 +1,7 @@
 import { useState, useCallback } from 'react';
 import { toast } from 'react-hot-toast';
 import { trpcClient } from '@/api/trpc/client';
-import { STOCK_ERROR_MESSAGES } from '@/types/trpc/stock';
+import { STOCK_ERROR_MESSAGES } from '@/types/schemas/stock';
 
 export interface Stock {
   fromDate: string;
