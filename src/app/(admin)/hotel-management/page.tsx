@@ -9,6 +9,7 @@ import StatCard from '@/components/common/StatCard';
 import QuickLinkCard from '@/components/common/QuickLinkCard';
 import { DashboardIcons, IconWrapper } from '@/components/common/icons';
 import { getRoomStatusConfig } from '@/utils/statusColors';
+import { BsBox } from 'react-icons/bs';
 
 const HotelManagementDashboard = () => {
   // Funciones de utilidad para fechas
@@ -136,6 +137,17 @@ const HotelManagementDashboard = () => {
       icon: (
         <IconWrapper className="fill-primary dark:fill-white mx-auto">
           <DashboardIcons.Pending />
+        </IconWrapper>
+      ),
+      showRoomStats: false,
+    },
+    {
+      title: 'Gestión de Stock',
+      description: 'Administrar stock de habitaciones',
+      path: '/hotel-management/stocks',
+      icon: (
+        <IconWrapper className="fill-primary dark:fill-white mx-auto">
+          <BsBox />
         </IconWrapper>
       ),
       showRoomStats: false,

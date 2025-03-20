@@ -4,6 +4,7 @@ import { statusRouter } from '@/types/trpc/status';
 import { roomRouter } from '@/types/trpc/room';
 import { roomCategoryRouter } from '@/types/trpc/roomCategory';
 import { roomStatusRouter } from '@/types/trpc/roomStatus';
+import { stockRouter } from '@/types/trpc/stock';
 
 import { LoginInput, RegisterInput, User, LoginResponse } from '@/types/api/auth';
 import { PingResponse } from '@/types/api/status';
@@ -30,6 +31,12 @@ import {
   GetRoomCategoryByIdInput,
 } from '@/types/api/roomCategory';
 import { RoomStatusResponse } from '@/types/api/roomStatus';
+import {
+  BulkCreateIndividualStocksInput,
+  GetStocksByFiltersInput,
+  BulkCreateIndividualStocksResponse,
+  GetStocksByFiltersResponse,
+} from '@/types/api/stock';
 
 // Definir el router principal
 export const appRouter = t.router({
@@ -38,6 +45,7 @@ export const appRouter = t.router({
   rooms: roomRouter,
   roomCategories: roomCategoryRouter,
   roomStatus: roomStatusRouter,
+  stocks: stockRouter,
 });
 
 // Tipos inferidos para entradas y salidass
@@ -66,6 +74,10 @@ export type RouterInputs = {
     update: UpdateRoomCategoryInput;
     delete: DeleteRoomCategoryInput;
     restore: RestoreRoomCategoryInput;
+  };
+  stocks: {
+    bulkCreateIndividualStocks: BulkCreateIndividualStocksInput;
+    getStocksByFilters: GetStocksByFiltersInput;
   };
 };
 
@@ -99,5 +111,9 @@ export type RouterOutputs = {
   };
   roomStatus: {
     getAll: RoomStatusResponse[];
+  };
+  stocks: {
+    bulkCreateIndividualStocks: BulkCreateIndividualStocksResponse;
+    getStocksByFilters: GetStocksByFiltersResponse;
   };
 };
