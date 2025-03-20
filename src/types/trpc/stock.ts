@@ -2,7 +2,7 @@ import { z } from 'zod';
 import { t } from '@/types/trpc/common';
 
 // Constantes para mensajes de error
-const ERROR_MESSAGES = {
+export const STOCK_ERROR_MESSAGES = {
   PACKAGE_NAME: {
     REQUIRED: 'El nombre del paquete es requerido',
     INVALID_TYPE: 'El nombre del paquete debe ser texto',
@@ -39,11 +39,11 @@ const ERROR_MESSAGES = {
 const createDateSchema = () =>
   z
     .string({
-      required_error: ERROR_MESSAGES.DATE.FROM_REQUIRED,
-      invalid_type_error: ERROR_MESSAGES.DATE.INVALID_TYPE,
+      required_error: STOCK_ERROR_MESSAGES.DATE.FROM_REQUIRED,
+      invalid_type_error: STOCK_ERROR_MESSAGES.DATE.INVALID_TYPE,
     })
     .datetime({
-      message: ERROR_MESSAGES.DATE.INVALID_FORMAT,
+      message: STOCK_ERROR_MESSAGES.DATE.INVALID_FORMAT,
     });
 
 // Request Schemas
@@ -51,10 +51,10 @@ const bulkCreateIndividualStocksRequestSchema = z
   .object({
     packageName: z
       .string({
-        required_error: ERROR_MESSAGES.PACKAGE_NAME.REQUIRED,
-        invalid_type_error: ERROR_MESSAGES.PACKAGE_NAME.INVALID_TYPE,
+        required_error: STOCK_ERROR_MESSAGES.PACKAGE_NAME.REQUIRED,
+        invalid_type_error: STOCK_ERROR_MESSAGES.PACKAGE_NAME.INVALID_TYPE,
       })
-      .min(1, ERROR_MESSAGES.PACKAGE_NAME.MIN_LENGTH)
+      .min(1, STOCK_ERROR_MESSAGES.PACKAGE_NAME.MIN_LENGTH)
       .optional(),
     isBundle: z
       .boolean({
@@ -63,26 +63,26 @@ const bulkCreateIndividualStocksRequestSchema = z
       .default(false),
     price: z
       .number({
-        required_error: ERROR_MESSAGES.PRICE.REQUIRED,
-        invalid_type_error: ERROR_MESSAGES.PRICE.INVALID_TYPE,
+        required_error: STOCK_ERROR_MESSAGES.PRICE.REQUIRED,
+        invalid_type_error: STOCK_ERROR_MESSAGES.PRICE.INVALID_TYPE,
       })
-      .positive(ERROR_MESSAGES.PRICE.POSITIVE),
+      .positive(STOCK_ERROR_MESSAGES.PRICE.POSITIVE),
     categoryId: z.string({
-      required_error: ERROR_MESSAGES.CATEGORY.REQUIRED,
-      invalid_type_error: ERROR_MESSAGES.CATEGORY.INVALID_TYPE,
+      required_error: STOCK_ERROR_MESSAGES.CATEGORY.REQUIRED,
+      invalid_type_error: STOCK_ERROR_MESSAGES.CATEGORY.INVALID_TYPE,
     }),
     stockQuantity: z
       .number({
-        required_error: ERROR_MESSAGES.STOCK_QUANTITY.REQUIRED,
-        invalid_type_error: ERROR_MESSAGES.STOCK_QUANTITY.INVALID_TYPE,
+        required_error: STOCK_ERROR_MESSAGES.STOCK_QUANTITY.REQUIRED,
+        invalid_type_error: STOCK_ERROR_MESSAGES.STOCK_QUANTITY.INVALID_TYPE,
       })
-      .positive(ERROR_MESSAGES.STOCK_QUANTITY.POSITIVE)
+      .positive(STOCK_ERROR_MESSAGES.STOCK_QUANTITY.POSITIVE)
       .int('La cantidad debe ser un número entero'),
     fromDate: createDateSchema(),
     toDate: createDateSchema(),
   })
   .refine(data => new Date(data.fromDate) <= new Date(data.toDate), {
-    message: ERROR_MESSAGES.DATE.INVALID_RANGE,
+    message: STOCK_ERROR_MESSAGES.DATE.INVALID_RANGE,
     path: ['toDate'],
   });
 
@@ -90,22 +90,22 @@ const getStocksByFiltersSchema = z
   .object({
     categoryId: z
       .string({
-        invalid_type_error: ERROR_MESSAGES.CATEGORY.INVALID_TYPE,
+        invalid_type_error: STOCK_ERROR_MESSAGES.CATEGORY.INVALID_TYPE,
       })
       .optional(),
     fromDate: createDateSchema(),
     toDate: createDateSchema(),
   })
   .refine(data => new Date(data.fromDate) <= new Date(data.toDate), {
-    message: ERROR_MESSAGES.DATE.INVALID_RANGE,
+    message: STOCK_ERROR_MESSAGES.DATE.INVALID_RANGE,
     path: ['toDate'],
   });
 
 // Response Schemas
 const bulkCreateIndividualStocksResponseSchema = z.object({
   createdStocks: z.number({
-    required_error: ERROR_MESSAGES.CREATED_STOCKS.REQUIRED,
-    invalid_type_error: ERROR_MESSAGES.CREATED_STOCKS.INVALID_TYPE,
+    required_error: STOCK_ERROR_MESSAGES.CREATED_STOCKS.REQUIRED,
+    invalid_type_error: STOCK_ERROR_MESSAGES.CREATED_STOCKS.INVALID_TYPE,
   }),
 });
 

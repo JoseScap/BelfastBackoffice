@@ -1,6 +1,7 @@
 import { useState, useCallback } from 'react';
 import { toast } from 'react-hot-toast';
-import { trpcClient } from '@/api/trpc';
+import { trpcClient } from '@/api/trpc/client';
+import { STOCK_ERROR_MESSAGES } from '@/types/trpc/stock';
 
 export interface Stock {
   fromDate: string;
@@ -72,16 +73,12 @@ export const useStocks = (): UseStocksReturn => {
   });
 
   const validateStock = useCallback((stock: Stock): string | null => {
-    if (!stock.fromDate) return 'La fecha de inicio es requerida';
-    if (!stock.toDate) return 'La fecha de fin es requerida';
-    if (!stock.stockQuantity || stock.stockQuantity <= 0) return 'La cantidad debe ser mayor a 0';
-    if (!stock.price || stock.price <= 0) return 'El precio debe ser mayor a 0';
-    if (!stock.categoryId) return 'La categoría es requerida';
-
-    const fromDate = new Date(stock.fromDate);
-    const toDate = new Date(stock.toDate);
-    if (fromDate > toDate) return 'La fecha de inicio debe ser anterior a la fecha de fin';
-
+    if (!stock.fromDate) return STOCK_ERROR_MESSAGES.DATE.FROM_REQUIRED;
+    if (!stock.toDate) return STOCK_ERROR_MESSAGES.DATE.TO_REQUIRED;
+    if (!stock.stockQuantity || stock.stockQuantity <= 0)
+      return STOCK_ERROR_MESSAGES.STOCK_QUANTITY.POSITIVE;
+    if (!stock.price || stock.price <= 0) return STOCK_ERROR_MESSAGES.PRICE.POSITIVE;
+    if (!stock.categoryId) return STOCK_ERROR_MESSAGES.CATEGORY.REQUIRED;
     return null;
   }, []);
 
