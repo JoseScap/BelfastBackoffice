@@ -125,3 +125,34 @@ export const getRoomStatusConfig = (status: RoomStatusValue): StatusColorConfig 
 export const getAppointmentStatusConfig = (status: AppointmentStatusValue): StatusColorConfig => {
   return APPOINTMENT_STATUS_COLORS[status];
 };
+
+// Mapper de estados de UI a backend
+export const mapUIStatusToBackend = (uiStatus: RoomStatusValue): string => {
+  const statusMap: Record<RoomStatusValue, string> = {
+    [ROOM_STATUS.AVAILABLE]: 'AVAILABLE',
+    [ROOM_STATUS.UNAVAILABLE]: 'UNAVAILABLE',
+    [ROOM_STATUS.CLEANING]: 'CLEANING',
+    [ROOM_STATUS.MAINTENANCE]: 'MAINTENANCE',
+  };
+
+  return statusMap[uiStatus] || 'AVAILABLE';
+};
+
+// Cache y función para generar colores de categoría
+const categoryColorsCache: Record<string, string> = {};
+
+/**
+ * Genera un color hexadecimal único basado en el nombre de la categoría
+ * @param categoryName Nombre de la categoría
+ * @returns Color hexadecimal
+ */
+export const getCategoryColor = (categoryName: string): string => {
+  if (!categoryColorsCache[categoryName]) {
+    const hash = Array.from(categoryName).reduce((acc, char) => {
+      return char.charCodeAt(0) + ((acc << 5) - acc);
+    }, 0);
+    const c = (hash & 0x00ffffff).toString(16).toUpperCase();
+    categoryColorsCache[categoryName] = `#${'00000'.substring(0, 6 - c.length)}${c}`;
+  }
+  return categoryColorsCache[categoryName];
+};
