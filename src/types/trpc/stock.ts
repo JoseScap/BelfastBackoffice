@@ -6,9 +6,8 @@ export const stockRouter = t.router({
   bulkCreateIndividualStocks: t.procedure
     .input(stockSchemas.bulkCreate)
     .output(stockSchemas.bulkCreateResponse)
-    .mutation(async ({ input }) => {
+    .mutation(async () => {
       // Implementación temporal para pruebas
-      console.log('Creando stocks con input:', input);
       return {
         createdStocks: 1,
       };
@@ -16,9 +15,8 @@ export const stockRouter = t.router({
   getStocksByFilters: t.procedure
     .input(stockSchemas.getByFilters)
     .output(stockSchemas.getByFiltersResponse)
-    .query(async ({ input }) => {
+    .query(async () => {
       // Implementación temporal para pruebas
-      console.log('Buscando stocks con filtros:', input);
       return {
         individualStocks: [],
       };
@@ -26,8 +24,7 @@ export const stockRouter = t.router({
   updateStocksPrice: t.procedure
     .input(stockSchemas.updatePrice)
     .output(stockSchemas.updatePriceResponse)
-    .mutation(async ({ input }) => {
-      console.log('Actualizando precio de stocks:', input);
+    .mutation(async () => {
       return {
         updatedStocks: 1,
       };
@@ -35,8 +32,7 @@ export const stockRouter = t.router({
   deleteStocks: t.procedure
     .input(stockSchemas.delete)
     .output(stockSchemas.deleteResponse)
-    .mutation(async ({ input }) => {
-      console.log('Eliminando stocks:', input);
+    .mutation(async () => {
       return {
         deletedStocks: 1,
       };
