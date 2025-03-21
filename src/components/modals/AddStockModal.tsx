@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import type { Stock } from '@/types/api/stock';
 import Modal from '@/components/common/Modal';
+import Button from '@/components/ui/button/Button';
 
 interface AddStockModalProps {
   isOpen: boolean;
@@ -31,12 +32,6 @@ export const AddStockModal: React.FC<AddStockModalProps> = ({
     return Math.ceil((end.getTime() - start.getTime()) / (1000 * 60 * 60 * 24)) + 1;
   };
 
-  // Calcular el precio total
-  const getTotalPrice = () => {
-    if (!newStock.price || !newStock.fromDate || !newStock.toDate) return 0;
-    return newStock.price * getDaysBetweenDates();
-  };
-
   const handleSubmit = async () => {
     try {
       setIsSubmitting(true);
@@ -52,15 +47,13 @@ export const AddStockModal: React.FC<AddStockModalProps> = ({
 
   const renderFooter = () => (
     <div className="flex justify-end gap-3">
-      <button
-        onClick={onClose}
-        className="rounded-lg border border-stroke px-4 py-2 text-black hover:bg-gray-100 dark:border-strokedark dark:text-white dark:hover:bg-meta-4"
-        disabled={isSubmitting}
-      >
+      <Button variant="outline" onClick={onClose} size="sm" disabled={isSubmitting}>
         Cancelar
-      </button>
-      <button
+      </Button>
+      <Button
+        variant="primary"
         onClick={handleSubmit}
+        size="sm"
         disabled={
           isSubmitting ||
           !newStock.categoryId ||
@@ -69,10 +62,9 @@ export const AddStockModal: React.FC<AddStockModalProps> = ({
           (newStock.price !== undefined && newStock.price <= 0) ||
           (newStock.stockQuantity !== undefined && newStock.stockQuantity <= 0)
         }
-        className="rounded-lg bg-primary px-4 py-2 text-white hover:bg-opacity-90 disabled:bg-opacity-50 disabled:cursor-not-allowed"
       >
         {isSubmitting ? 'Guardando...' : 'Guardar'}
-      </button>
+      </Button>
     </div>
   );
 
@@ -216,11 +208,7 @@ export const AddStockModal: React.FC<AddStockModalProps> = ({
 
           <div className="flex justify-between items-center mt-2">
             <span className="text-sm">Precio total por habitación:</span>
-            <span className="font-bold">
-              {newStock.price && newStock.fromDate && newStock.toDate
-                ? `$${getTotalPrice()} ($${newStock.price}/noche × ${getDaysBetweenDates()} noches)`
-                : '$0'}
-            </span>
+            <span className="font-bold">${newStock.price}</span>
           </div>
         </div>
       </div>
