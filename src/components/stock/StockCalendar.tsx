@@ -173,7 +173,7 @@ export const StockCalendar: React.FC<StockCalendarProps> = ({
                   <span className="flex h-5 w-5 items-center justify-center rounded-full bg-primary text-xs text-white">
                     {entriesForDay.length}
                   </span>
-                )} 
+                )}
               </div>
 
               {/* Entradas de stock para este día */}
@@ -192,7 +192,7 @@ export const StockCalendar: React.FC<StockCalendarProps> = ({
                         e.stopPropagation();
                         onStockClick?.(entry);
                       }}
-                      className={`flex items-center justify-between rounded-md px-2 py-1.5 text-xs hover:shadow-sm transition-shadow cursor-pointer text-black bg-slate-200 border-l-[4px] ${categoryConfig.border}`}
+                      className={`flex items-center justify-between rounded-md px-2 py-1.5 text-xs hover:shadow-sm transition-shadow cursor-pointer text-black bg-blue-light-100 border-l-[4px] ${categoryConfig.border}`}
                       title={`${category?.name} - $${entry.price}/n - ${entry.stockQuantity} habitaciones disponibles`}
                     >
                       <div className="flex flex-col">
