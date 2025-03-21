@@ -23,4 +23,22 @@ export const stockRouter = t.router({
         individualStocks: [],
       };
     }),
+  updateStocksPrice: t.procedure
+    .input(stockSchemas.updatePrice)
+    .output(stockSchemas.updatePriceResponse)
+    .mutation(async ({ input }) => {
+      console.log('Actualizando precio de stocks:', input);
+      return {
+        updatedStocks: 1,
+      };
+    }),
+  deleteStocks: t.procedure
+    .input(stockSchemas.delete)
+    .output(stockSchemas.deleteResponse)
+    .mutation(async ({ input }) => {
+      console.log('Eliminando stocks:', input);
+      return {
+        deletedStocks: 1,
+      };
+    }),
 });
