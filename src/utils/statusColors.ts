@@ -17,6 +17,16 @@ export const APPOINTMENT_STATUS = {
   OVERSOLD: 'Sobrevendido',
 } as const;
 
+// Constantes de categorías
+export const ROOM_CATEGORIES = {
+  SENIOR_DOUBLE: 'Senior Double',
+  SENIOR_QUEEN: 'Senior Queen',
+  SENIOR_KING: 'Senior King',
+  SIMPLE_FAMILY: 'Simple Family (Double + One)',
+  SENIOR_FAMILY: 'Senior Family (Double + One)',
+  SIMPLE_ONE: 'Simple One',
+} as const;
+
 type StatusColorConfig = {
   background: string;
   text: string;
@@ -81,6 +91,45 @@ export const APPOINTMENT_STATUS_COLORS: Record<AppointmentStatusValue, StatusCol
   },
 } as const;
 
+// Configuración de colores para categorías de habitaciones
+export const CATEGORY_COLORS: Record<string, StatusColorConfig> = {
+  [ROOM_CATEGORIES.SENIOR_DOUBLE]: {
+    background: 'bg-blue-500',
+    text: 'text-white',
+    border: 'border-blue-600',
+  },
+  [ROOM_CATEGORIES.SENIOR_QUEEN]: {
+    background: 'bg-yellow-500',
+    text: 'text-white',
+    border: 'border-yellow-600',
+  },
+  [ROOM_CATEGORIES.SENIOR_KING]: {
+    background: 'bg-indigo-500',
+    text: 'text-white',
+    border: 'border-indigo-600',
+  },
+  [ROOM_CATEGORIES.SIMPLE_FAMILY]: {
+    background: 'bg-red-500',
+    text: 'text-white',
+    border: 'border-red-600',
+  },
+  [ROOM_CATEGORIES.SENIOR_FAMILY]: {
+    background: 'bg-emerald-500',
+    text: 'text-white',
+    border: 'border-emerald-600',
+  },
+  [ROOM_CATEGORIES.SIMPLE_ONE]: {
+    background: 'bg-orange-500',
+    text: 'text-white',
+    border: 'border-orange-600',
+  },
+  default: {
+    background: 'bg-cyan-500',
+    text: 'text-white',
+    border: 'border-cyan-600',
+  },
+} as const;
+
 // Mappers de estados del backend a UI
 export const mapRoomStatusToUI = (backendStatus: string): RoomStatusValue => {
   const statusMap: Record<string, RoomStatusValue> = {
@@ -124,4 +173,35 @@ export const getRoomStatusConfig = (status: RoomStatusValue): StatusColorConfig 
 
 export const getAppointmentStatusConfig = (status: AppointmentStatusValue): StatusColorConfig => {
   return APPOINTMENT_STATUS_COLORS[status];
+};
+
+// Función helper para obtener la configuración de color de una categoría
+export const getCategoryConfig = (categoryName: string | undefined): StatusColorConfig => {
+  if (!categoryName) return CATEGORY_COLORS.default;
+
+  // Buscar coincidencia exacta
+  if (categoryName in CATEGORY_COLORS) {
+    return CATEGORY_COLORS[categoryName];
+  }
+
+  // Si no hay coincidencia exacta, buscar por tipo de habitación
+  const normalizedName = categoryName.toLowerCase();
+
+  if (normalizedName.includes('senior double'))
+    return CATEGORY_COLORS[ROOM_CATEGORIES.SENIOR_DOUBLE];
+  if (normalizedName.includes('senior queen')) return CATEGORY_COLORS[ROOM_CATEGORIES.SENIOR_QUEEN];
+  if (normalizedName.includes('senior king')) return CATEGORY_COLORS[ROOM_CATEGORIES.SENIOR_KING];
+  if (normalizedName.includes('simple family'))
+    return CATEGORY_COLORS[ROOM_CATEGORIES.SIMPLE_FAMILY];
+  if (normalizedName.includes('senior family'))
+    return CATEGORY_COLORS[ROOM_CATEGORIES.SENIOR_FAMILY];
+  if (normalizedName.includes('simple one')) return CATEGORY_COLORS[ROOM_CATEGORIES.SIMPLE_ONE];
+
+  return CATEGORY_COLORS.default;
+};
+
+// Función helper para obtener las clases de color de una categoría
+export const getCategoryColors = (categoryName: string | undefined): string => {
+  const config = getCategoryConfig(categoryName);
+  return `${config.background} ${config.text}`;
 };

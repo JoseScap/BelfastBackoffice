@@ -4,6 +4,7 @@ export interface Stock {
   stockQuantity: number;
   price: number;
   categoryId: string;
+  categoryName?: string;
 }
 
 export interface Category {
@@ -20,6 +21,8 @@ export interface StocksByDateResponse {
   date: Date;
   count: number;
   price: number;
+  categoryId: string;
+  categoryName: string;
 }
 
 export interface GetStocksByFiltersResponse {
@@ -44,4 +47,26 @@ export interface GetStocksByFiltersInput {
   categoryId?: string;
   fromDate: string;
   toDate: string;
+}
+
+export interface UpdateStocksPriceInput {
+  fromDate: string;
+  toDate: string;
+  categoryId: string;
+  price: number;
+}
+
+export interface DeleteStocksInput {
+  fromDate: string;
+  toDate: string;
+  categoryId: string;
+  quantity: number;
+}
+
+export interface UpdateStocksPriceResponse {
+  updatedStocks: number;
+}
+
+export interface DeleteStocksResponse {
+  deletedStocks: number;
 }
