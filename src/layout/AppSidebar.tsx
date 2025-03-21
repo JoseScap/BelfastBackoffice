@@ -117,6 +117,7 @@ const navItems: NavItem[] = [
         new: true,
       },
       { name: 'Solicitudes Pendientes', path: '/hotel-management/pending', pro: false, new: true },
+      { name: 'Gestión de Stock', path: '/hotel-management/stocks', pro: false, new: true },
     ],
   },
 ];
