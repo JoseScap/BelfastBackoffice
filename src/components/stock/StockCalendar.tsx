@@ -160,27 +160,26 @@ export const StockCalendar: React.FC<StockCalendarProps> = ({
                   : viewMode === 'biweek'
                   ? 'min-h-[250px]'
                   : 'min-h-[500px]'
-              } border-b border-r border-stroke p-2 dark:border-strokedark relative ${
-                !day.isCurrentMonth ? 'bg-gray-50 dark:bg-meta-4/30' : ''
-              } ${isToday ? 'bg-slate-50 dark:bg-blue-900/10' : ''}`}
+              } border-b border-r border-stroke dark:border-strokedark relative`}
             >
               <div
-                className={`flex justify-between mb-3 pb-1 border-b border-gray-100 dark:border-gray-700 ${
+                className={`flex justify-between mb-3 p-2 border-b border-gray-100 dark:border-gray-700 ${
                   !day.isCurrentMonth
                     ? 'text-gray-400 dark:text-gray-600'
                     : 'text-black dark:text-white'
-                } ${isToday ? 'font-bold text-primary' : ''}`}
+                } ${
+                  isToday
+                    ? 'bg-brand-50 text-brand-500 dark:bg-brand-500/[0.12] dark:text-brand-400'
+                    : ''
+                }`}
               >
-                <span>{day.date.getDate()}</span>
-                {entriesForDay.length > 0 && (
-                  <span className="flex h-5 w-5 items-center justify-center rounded-full bg-primary text-xs text-white">
-                    {entriesForDay.length}
-                  </span>
-                )}
+                <span className="flex items-center justify-between gap-1 w-full">
+                  {day.date.getDate()}{' '}
+                </span>
               </div>
 
               {/* Entradas de stock para este día */}
-              <div className="mt-1 flex flex-col gap-1">
+              <div className="mt-1 flex flex-col gap-1 p-2">
                 {entriesForDay.length === 0 && day.isCurrentMonth && (
                   <div className="text-xs text-red-500 font-medium">Sin stock</div>
                 )}

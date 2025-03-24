@@ -10,7 +10,7 @@ import { useStocks } from '@/hooks/useStocks';
 import { useCategories } from '@/hooks/useCategories';
 import type { Stock } from '@/types/api/stock';
 import Button from '@/components/ui/button/Button';
-import { BsHouse } from 'react-icons/bs';
+import { BsFillHouseAddFill } from 'react-icons/bs';
 
 // Función auxiliar para formatear fechas
 const formatDateForInput = (date: Date): string => {
@@ -287,7 +287,7 @@ const StocksPage = () => {
                 setShowAddModal(true);
               }}
               disabled={isLoading}
-              startIcon={<BsHouse />}
+              endIcon={<BsFillHouseAddFill size={20} />}
               className=""
             >
               Añadir Stock
