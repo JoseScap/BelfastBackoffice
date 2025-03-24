@@ -57,12 +57,13 @@ const StocksPage = () => {
   // Manejar clic en un día
   const handleDayClick = useCallback(
     (date: Date) => {
-      const endDate = new Date(date);
-      endDate.setDate(date.getDate() + 1); // Por defecto, 1 día
+      // Asegurarnos de que la fecha esté en la zona horaria local y sin tiempo
+      const localDate = new Date(date);
+      localDate.setHours(0, 0, 0, 0);
 
       setNewStock({
-        fromDate: formatDateForInput(date),
-        toDate: formatDateForInput(endDate),
+        fromDate: localDate.toISOString().split('T')[0],
+        toDate: localDate.toISOString().split('T')[0],
         stockQuantity: 1,
         price: 100,
         categoryId: selectedCategory === 'all' ? '' : selectedCategory,

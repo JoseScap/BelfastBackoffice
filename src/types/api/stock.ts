@@ -50,6 +50,7 @@ export interface GetStocksByFiltersInput {
 }
 
 export interface UpdateStocksPriceInput {
+  date: string; // YYYY-MM-DD
   fromDate: string; // YYYY-MM-DD
   toDate: string; // YYYY-MM-DD
   categoryId: string;

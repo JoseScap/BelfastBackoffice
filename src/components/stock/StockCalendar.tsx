@@ -26,6 +26,12 @@ const isSameDay = (date1: Date, date2: Date): boolean => {
   );
 };
 
+// Helper function to parse dates correctly
+const parseDate = (dateString: string): Date => {
+  const [year, month, day] = dateString.split('-').map(Number);
+  return new Date(year, month - 1, day);
+};
+
 export const StockCalendar: React.FC<StockCalendarProps> = ({
   currentDate,
   viewMode,
@@ -99,16 +105,13 @@ export const StockCalendar: React.FC<StockCalendarProps> = ({
   // Obtener entradas para una fecha específica
   const getEntriesForDate = (date: Date) => {
     return stocks.filter(stock => {
-      const stockStartDate = new Date(stock.fromDate);
-      const stockEndDate = new Date(stock.toDate);
-      const dateToCheck = new Date(date);
+      // Convertir la fecha del calendario a YYYY-MM-DD
+      const calendarDate = new Date(date.getTime() - date.getTimezoneOffset() * 60000)
+        .toISOString()
+        .split('T')[0];
 
-      // Resetear horas para comparar solo fechas
-      dateToCheck.setHours(0, 0, 0, 0);
-      stockStartDate.setHours(0, 0, 0, 0);
-      stockEndDate.setHours(0, 0, 0, 0);
-
-      return dateToCheck >= stockStartDate && dateToCheck <= stockEndDate;
+      // La fecha del stock ya está en formato YYYY-MM-DD
+      return stock.fromDate === calendarDate;
     });
   };
 
@@ -159,7 +162,7 @@ export const StockCalendar: React.FC<StockCalendarProps> = ({
                   : 'min-h-[500px]'
               } border-b border-r border-stroke p-2 dark:border-strokedark relative ${
                 !day.isCurrentMonth ? 'bg-gray-50 dark:bg-meta-4/30' : ''
-              } ${isToday ? 'bg-blue-50 dark:bg-blue-900/10' : ''}`}
+              } ${isToday ? 'bg-slate-50 dark:bg-blue-900/10' : ''}`}
             >
               <div
                 className={`flex justify-between mb-3 pb-1 border-b border-gray-100 dark:border-gray-700 ${
@@ -198,9 +201,9 @@ export const StockCalendar: React.FC<StockCalendarProps> = ({
                       <div className="flex flex-col">
                         <span className="font-medium w-full">{category?.name}</span>
                         <span className="text-[10px] opacity-90">
-                          {new Date(entry.fromDate).toLocaleDateString()}
-                          {!isSameDay(new Date(entry.fromDate), new Date(entry.toDate)) &&
-                            ` - ${new Date(entry.toDate).toLocaleDateString()}`}
+                          {parseDate(entry.fromDate).toLocaleDateString()}
+                          {!isSameDay(parseDate(entry.fromDate), parseDate(entry.toDate)) &&
+                            ` - ${parseDate(entry.toDate).toLocaleDateString()}`}
                         </span>
                         <span className="font-bold text-sm">
                           ${entry.price.toLocaleString('es-ES', { maximumFractionDigits: 0 })}/n
