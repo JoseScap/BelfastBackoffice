@@ -33,7 +33,8 @@ export const ViewStockModal: React.FC<ViewStockModalProps> = ({
 
   // Formatear fecha para mostrar
   const formatDate = (dateStr: string) => {
-    const date = new Date(dateStr);
+    const [year, month, day] = dateStr.split('-');
+    const date = new Date(Number(year), Number(month) - 1, Number(day));
     return date.toLocaleDateString('es-ES', {
       weekday: 'long',
       year: 'numeric',
@@ -53,6 +54,7 @@ export const ViewStockModal: React.FC<ViewStockModalProps> = ({
       });
       toast.success('Precio actualizado exitosamente');
       setIsEditing(false);
+      onClose();
     } catch (error) {
       console.error('Error al actualizar el precio:', error);
       toast.error('Ha ocurrido un error al actualizar el precio. Por favor, inténtalo de nuevo.');

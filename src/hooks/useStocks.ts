@@ -21,7 +21,7 @@ interface UseStocksReturn {
 
   // Form state
   newStock: Stock;
-  setNewStock: (stock: Stock) => void;
+  setNewStock: (stock: Stock | ((prev: Stock) => Stock)) => void;
 
   // Search filters state
   dateRange: {
@@ -59,20 +59,16 @@ const formatDateForInput = (date: Date): string => {
 };
 
 const formatDateForApi = (dateStr: string): string => {
-  try {
-    // Si la fecha ya está en formato ISO, simplemente la retornamos
-    if (dateStr.includes('T')) {
-      return dateStr;
-    }
-
-    // Si es YYYY-MM-DD, la convertimos a ISO
-    const [year, month, day] = dateStr.split('-').map(Number);
-    const date = new Date(Date.UTC(year, month - 1, day));
-    return date.toISOString();
-  } catch (error) {
-    console.error('Error formatting date:', error);
-    throw new Error(`Invalid date format: ${dateStr}. Expected format: YYYY-MM-DD or ISO date`);
+  // Ya está en formato YYYY-MM-DD, lo retornamos tal cual
+  if (/^\d{4}-\d{2}-\d{2}$/.test(dateStr)) {
+    return dateStr;
   }
+  // Si es una fecha ISO, la convertimos a YYYY-MM-DD
+  const date = new Date(dateStr);
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, '0');
+  const day = String(date.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
 };
 
 export const useStocks = (): UseStocksReturn => {
@@ -125,8 +121,8 @@ export const useStocks = (): UseStocksReturn => {
       // Transformar la respuesta al formato esperado por el estado
       const transformedStocks: Stock[] = (response.individualStocks as StockResponse[]).map(
         stock => ({
-          fromDate: formatDateForInput(new Date(stock.date)),
-          toDate: formatDateForInput(new Date(stock.date)),
+          fromDate: formatDateForApi(stock.date),
+          toDate: formatDateForApi(stock.date),
           stockQuantity: stock.count,
           price: stock.price,
           categoryId: stock.categoryId,
