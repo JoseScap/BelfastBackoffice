@@ -2,7 +2,7 @@ import { useState, useCallback } from 'react';
 import { toast } from 'react-hot-toast';
 import { trpcClient } from '@/api/trpc/client';
 import { STOCK_ERROR_MESSAGES } from '@/types/schemas/stock';
-import type { Stock } from '@/types/api/stock';
+import type { Stock, UpdateStocksPriceInput } from '@/types/api/stock';
 
 interface StockResponse {
   date: string;
@@ -188,12 +188,15 @@ export const useStocks = (): UseStocksReturn => {
   const updateStockPrice = useCallback(
     async (params: { fromDate: string; toDate: string; categoryId: string; price: number }) => {
       try {
-        await trpcClient.stocks.updateStocksPrice.mutate({
+        const updateInput: UpdateStocksPriceInput = {
+          date: formatDateForApi(params.fromDate),
           fromDate: formatDateForApi(params.fromDate),
           toDate: formatDateForApi(params.toDate),
           categoryId: params.categoryId,
           price: params.price,
-        });
+        };
+
+        await trpcClient.stocks.updateStocksPrice.mutate(updateInput);
 
         toast.success('Precio actualizado exitosamente');
         await fetchStocks();
