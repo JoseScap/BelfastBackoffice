@@ -9,6 +9,8 @@ import { ViewStockModal } from '@/components/modals/ViewStockModal';
 import { useStocks } from '@/hooks/useStocks';
 import { useCategories } from '@/hooks/useCategories';
 import type { Stock } from '@/types/api/stock';
+import Button from '@/components/ui/button/Button';
+import { BsHouse } from 'react-icons/bs';
 
 // Función auxiliar para formatear fechas
 const formatDateForInput = (date: Date): string => {
@@ -258,7 +260,7 @@ const StocksPage = () => {
                 setSelectedCategory(value);
                 setSelectedCategoryId(value === 'all' ? '' : value);
               }}
-              className="rounded-md border border-stroke px-3 py-2 dark:border-strokedark dark:bg-boxdark"
+              className="rounded-md border border-stroke px-3 py-2.5 dark:border-strokedark dark:bg-boxdark"
               disabled={isLoadingCategories}
             >
               <option value="all">Todas las categorías</option>
@@ -269,7 +271,7 @@ const StocksPage = () => {
               ))}
             </select>
 
-            <button
+            <Button
               onClick={() => {
                 const today = new Date();
                 const tomorrow = new Date(today);
@@ -284,23 +286,12 @@ const StocksPage = () => {
                 });
                 setShowAddModal(true);
               }}
-              className="flex items-center gap-2 rounded-md bg-primary py-2 px-4 font-medium text-white hover:bg-opacity-80"
               disabled={isLoading}
+              startIcon={<BsHouse />}
+              className=""
             >
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                className="h-5 w-5"
-                viewBox="0 0 20 20"
-                fill="currentColor"
-              >
-                <path
-                  fillRule="evenodd"
-                  d="M10 3a1 1 0 011 1v5h5a1 1 0 110 2h-5v5a1 1 0 11-2 0v-5H4a1 1 0 110-2h5V4a1 1 0 011-1z"
-                  clipRule="evenodd"
-                />
-              </svg>
               Añadir Stock
-            </button>
+            </Button>
           </div>
         </div>
 
