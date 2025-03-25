@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, Dispatch, SetStateAction } from 'react';
 import { toast } from 'react-hot-toast';
 import { trpcClient } from '@/api/trpc/client';
 import { STOCK_ERROR_MESSAGES } from '@/types/schemas/stock';
@@ -21,7 +21,7 @@ interface UseStocksReturn {
 
   // Form state
   newStock: Stock;
-  setNewStock: (stock: Stock | ((prev: Stock) => Stock)) => void;
+  setNewStock: Dispatch<SetStateAction<Stock>>;
 
   // Search filters state
   dateRange: {

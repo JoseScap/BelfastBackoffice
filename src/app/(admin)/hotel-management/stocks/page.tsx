@@ -8,6 +8,7 @@ import { AddStockModal } from '@/components/modals/AddStockModal';
 import { ViewStockModal } from '@/components/modals/ViewStockModal';
 import { useStocks } from '@/hooks/useStocks';
 import { useCategories } from '@/hooks/useCategories';
+import { useCalendarControls } from '@/hooks/useCalendarControls';
 import type { Stock } from '@/types/api/stock';
 import Button from '@/components/ui/button/Button';
 import { BsFillHouseAddFill } from 'react-icons/bs';
@@ -22,8 +23,16 @@ const formatDateForInput = (date: Date): string => {
 
 const StocksPage = () => {
   // Estados para el calendario
-  const [currentDate, setCurrentDate] = useState(new Date());
-  const [viewMode, setViewMode] = useState<'month' | 'week' | 'biweek'>('biweek');
+  const {
+    currentDate,
+    viewMode,
+    formattedPeriod,
+    setViewMode,
+    goToPrevPeriod,
+    goToNextPeriod,
+    goToToday,
+  } = useCalendarControls('biweek');
+
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
   const [showAddModal, setShowAddModal] = useState(false);
   const [selectedStock, setSelectedStock] = useState<Stock | null>(null);
@@ -81,67 +90,6 @@ const StocksPage = () => {
     setSelectedStock(stock);
   }, []);
 
-  // Manejar navegación del calendario
-  const goToPrevPeriod = () => {
-    setCurrentDate(prev => {
-      const newDate = new Date(prev);
-      if (viewMode === 'month') {
-        newDate.setMonth(prev.getMonth() - 1);
-      } else if (viewMode === 'biweek') {
-        newDate.setDate(prev.getDate() - 14);
-      } else {
-        newDate.setDate(prev.getDate() - 7);
-      }
-      return newDate;
-    });
-  };
-
-  const goToNextPeriod = () => {
-    setCurrentDate(prev => {
-      const newDate = new Date(prev);
-      if (viewMode === 'month') {
-        newDate.setMonth(prev.getMonth() + 1);
-      } else if (viewMode === 'biweek') {
-        newDate.setDate(prev.getDate() + 14);
-      } else {
-        newDate.setDate(prev.getDate() + 7);
-      }
-      return newDate;
-    });
-  };
-
-  const goToToday = () => {
-    setCurrentDate(new Date());
-  };
-
-  // Formatear período para mostrar
-  const formatPeriod = (date: Date) => {
-    if (viewMode === 'month') {
-      return date.toLocaleDateString('es-ES', { month: 'long', year: 'numeric' });
-    } else if (viewMode === 'week' || viewMode === 'biweek') {
-      const currentDay = new Date(date);
-      const dayOfWeek = currentDay.getDay();
-      const diff = dayOfWeek === 0 ? 6 : dayOfWeek - 1;
-
-      const monday = new Date(date);
-      monday.setDate(date.getDate() - diff);
-
-      const endDay = new Date(monday);
-      endDay.setDate(monday.getDate() + (viewMode === 'week' ? 6 : 13));
-
-      const startFormatted = monday.toLocaleDateString('es-ES', { day: 'numeric' });
-      const endFormatted = endDay.toLocaleDateString('es-ES', {
-        day: 'numeric',
-        month: 'long',
-        year: 'numeric',
-      });
-
-      return `${startFormatted} - ${endFormatted}`;
-    }
-
-    return '';
-  };
-
   // Estado de carga
   const isLoading = isLoadingStocks || isLoadingCategories;
 
@@ -182,9 +130,7 @@ const StocksPage = () => {
               </svg>
             </button>
 
-            <h2 className="text-xl font-semibold text-black dark:text-white">
-              {formatPeriod(currentDate)}
-            </h2>
+            <h2 className="text-xl font-semibold text-black dark:text-white">{formattedPeriod}</h2>
 
             <button
               onClick={goToNextPeriod}

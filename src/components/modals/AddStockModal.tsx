@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, Dispatch, SetStateAction } from 'react';
 import type { Stock } from '@/types/api/stock';
 import Modal from '@/components/common/Modal';
 import Button from '@/components/ui/button/Button';
@@ -8,7 +8,7 @@ interface AddStockModalProps {
   onClose: () => void;
   onSubmit: () => Promise<void>;
   newStock: Stock;
-  setNewStock: (stock: Stock | ((prev: Stock) => Stock)) => void;
+  setNewStock: Dispatch<SetStateAction<Stock>>;
   categories: { id: string; name: string }[];
 }
 
