@@ -39,14 +39,14 @@ import {
   GetStocksByFiltersResponse,
 } from '@/types/api/stock';
 import {
-  ReservationResponse,
-  CreateReservationInput,
-  UpdateReservationInput,
-  UpdateReservationStatusInput,
-  DeleteReservationInput,
-  RestoreReservationInput,
-  GetReservationByIdInput,
-  GetReservationsByFilterInput,
+  ListReservationsByStatusResponse,
+  CreateReservationRequest as CreateReservationInput,
+  EditReservationRequest as UpdateReservationInput,
+  CancelReservationRequest as UpdateReservationStatusInput,
+  EditReservationRequest as DeleteReservationInput,
+  EditReservationRequest as RestoreReservationInput,
+  EditReservationRequest as GetReservationByIdInput,
+  ListReservationsRequest as GetReservationsByFilterInput,
 } from '@/types/api/reservation';
 
 // Definir el router principal
@@ -140,10 +140,10 @@ export type RouterOutputs = {
     getStocksByFilters: GetStocksByFiltersResponse;
   };
   reservations: {
-    create: ReservationResponse;
-    getByFilter: ReservationResponse[];
-    getById: ReservationResponse;
-    update: ReservationResponse;
+    create: ListReservationsByStatusResponse;
+    getByFilter: ListReservationsByStatusResponse[];
+    getById: ListReservationsByStatusResponse;
+    update: ListReservationsByStatusResponse;
     updateStatus: ActionResponse;
     delete: ActionResponse;
     restore: ActionResponse;
