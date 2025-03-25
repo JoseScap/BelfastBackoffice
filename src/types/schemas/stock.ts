@@ -112,7 +112,58 @@ export const stockSchemas = {
         date: z.date(),
         count: z.number().int().nonnegative(),
         price: z.number().nonnegative(),
+        categoryId: z.string(),
+        categoryName: z.string(),
       })
     ),
+  }),
+
+  updatePrice: z
+    .object({
+      fromDate: createDateSchema(),
+      toDate: createDateSchema(),
+      categoryId: z.string({
+        required_error: STOCK_ERROR_MESSAGES.CATEGORY.REQUIRED,
+        invalid_type_error: STOCK_ERROR_MESSAGES.CATEGORY.INVALID_TYPE,
+      }),
+      price: z
+        .number({
+          required_error: STOCK_ERROR_MESSAGES.PRICE.REQUIRED,
+          invalid_type_error: STOCK_ERROR_MESSAGES.PRICE.INVALID_TYPE,
+        })
+        .positive(STOCK_ERROR_MESSAGES.PRICE.POSITIVE),
+    })
+    .refine(data => new Date(data.fromDate) <= new Date(data.toDate), {
+      message: STOCK_ERROR_MESSAGES.DATE.INVALID_RANGE,
+      path: ['toDate'],
+    }),
+
+  updatePriceResponse: z.object({
+    updatedStocks: z.number().int().nonnegative(),
+  }),
+
+  delete: z
+    .object({
+      fromDate: createDateSchema(),
+      toDate: createDateSchema(),
+      categoryId: z.string({
+        required_error: STOCK_ERROR_MESSAGES.CATEGORY.REQUIRED,
+        invalid_type_error: STOCK_ERROR_MESSAGES.CATEGORY.INVALID_TYPE,
+      }),
+      quantity: z
+        .number({
+          required_error: STOCK_ERROR_MESSAGES.STOCK_QUANTITY.REQUIRED,
+          invalid_type_error: STOCK_ERROR_MESSAGES.STOCK_QUANTITY.INVALID_TYPE,
+        })
+        .positive(STOCK_ERROR_MESSAGES.STOCK_QUANTITY.POSITIVE)
+        .int('La cantidad debe ser un número entero'),
+    })
+    .refine(data => new Date(data.fromDate) <= new Date(data.toDate), {
+      message: STOCK_ERROR_MESSAGES.DATE.INVALID_RANGE,
+      path: ['toDate'],
+    }),
+
+  deleteResponse: z.object({
+    deletedStocks: z.number().int().nonnegative(),
   }),
 } as const;

@@ -1,9 +1,10 @@
 export interface Stock {
-  fromDate: string;
-  toDate: string;
+  fromDate: string; // YYYY-MM-DD
+  toDate: string; // YYYY-MM-DD
   stockQuantity: number;
   price: number;
   categoryId: string;
+  categoryName?: string;
 }
 
 export interface Category {
@@ -20,6 +21,8 @@ export interface StocksByDateResponse {
   date: Date;
   count: number;
   price: number;
+  categoryId: string;
+  categoryName: string;
 }
 
 export interface GetStocksByFiltersResponse {
@@ -44,4 +47,27 @@ export interface GetStocksByFiltersInput {
   categoryId?: string;
   fromDate: string;
   toDate: string;
+}
+
+export interface UpdateStocksPriceInput {
+  date: string; // YYYY-MM-DD
+  fromDate: string; // YYYY-MM-DD
+  toDate: string; // YYYY-MM-DD
+  categoryId: string;
+  price: number;
+}
+
+export interface DeleteStocksInput {
+  fromDate: string;
+  toDate: string;
+  categoryId: string;
+  quantity: number;
+}
+
+export interface UpdateStocksPriceResponse {
+  updatedStocks: number;
+}
+
+export interface DeleteStocksResponse {
+  deletedStocks: number;
 }

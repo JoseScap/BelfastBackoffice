@@ -1,14 +1,15 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, Dispatch, SetStateAction } from 'react';
 import { toast } from 'react-hot-toast';
 import { trpcClient } from '@/api/trpc/client';
 import { STOCK_ERROR_MESSAGES } from '@/types/schemas/stock';
+import type { Stock, UpdateStocksPriceInput } from '@/types/api/stock';
 
-export interface Stock {
-  fromDate: string;
-  toDate: string;
-  stockQuantity: number;
+interface StockResponse {
+  date: string;
   price: number;
+  count: number;
   categoryId: string;
+  categoryName: string;
 }
 
 interface UseStocksReturn {
@@ -20,7 +21,7 @@ interface UseStocksReturn {
 
   // Form state
   newStock: Stock;
-  setNewStock: (stock: Stock) => void;
+  setNewStock: Dispatch<SetStateAction<Stock>>;
 
   // Search filters state
   dateRange: {
@@ -34,19 +35,39 @@ interface UseStocksReturn {
   // Actions
   fetchStocks: () => Promise<void>;
   createStock: () => Promise<void>;
+  updateStockPrice: (params: {
+    fromDate: string;
+    toDate: string;
+    categoryId: string;
+    price: number;
+  }) => Promise<void>;
+  deleteStock: (params: {
+    fromDate: string;
+    toDate: string;
+    categoryId: string;
+    quantity: number;
+  }) => Promise<void>;
   validateStock: (stock: Stock) => string | null;
 }
 
 const today = new Date();
-const nextWeek = new Date(today.getTime() + 7 * 24 * 60 * 60 * 1000);
+const nextMonth = new Date(today);
+nextMonth.setMonth(nextMonth.getMonth() + 1);
 
 const formatDateForInput = (date: Date): string => {
   return date.toISOString().split('T')[0];
 };
 
 const formatDateForApi = (dateStr: string): string => {
-  // Convertir YYYY-MM-DD a YYYY-MM-DDT00:00:00.000Z
-  return new Date(dateStr + 'T00:00:00.000Z').toISOString();
+  // Si ya está en formato YYYY-MM-DD, lo retornamos tal cual
+  if (/^\d{4}-\d{2}-\d{2}$/.test(dateStr)) {
+    return dateStr;
+  }
+  // Si es una fecha ISO o cualquier otro formato, la convertimos a YYYY-MM-DD
+  const date = new Date(dateStr);
+  // Ajustar a la zona horaria local
+  const localDate = new Date(date.getTime() - date.getTimezoneOffset() * 60000);
+  return localDate.toISOString().split('T')[0];
 };
 
 export const useStocks = (): UseStocksReturn => {
@@ -59,14 +80,14 @@ export const useStocks = (): UseStocksReturn => {
   // Search filters state
   const [dateRange, setDateRange] = useState({
     startDate: formatDateForInput(today),
-    endDate: formatDateForInput(nextWeek),
+    endDate: formatDateForInput(nextMonth),
   });
   const [selectedCategoryId, setSelectedCategoryId] = useState('');
 
   // Form state
   const [newStock, setNewStock] = useState<Stock>({
     fromDate: formatDateForInput(today),
-    toDate: formatDateForInput(nextWeek),
+    toDate: formatDateForInput(nextMonth),
     stockQuantity: 1,
     price: 100,
     categoryId: '',
@@ -97,13 +118,16 @@ export const useStocks = (): UseStocksReturn => {
       });
 
       // Transformar la respuesta al formato esperado por el estado
-      const transformedStocks: Stock[] = response.individualStocks.map(stock => ({
-        fromDate: typeof stock.date === 'string' ? stock.date : new Date(stock.date).toISOString(),
-        toDate: typeof stock.date === 'string' ? stock.date : new Date(stock.date).toISOString(),
-        stockQuantity: stock.count,
-        price: stock.price,
-        categoryId: selectedCategoryId || '',
-      }));
+      const transformedStocks: Stock[] = (response.individualStocks as StockResponse[]).map(
+        stock => ({
+          fromDate: formatDateForApi(stock.date),
+          toDate: formatDateForApi(stock.date),
+          stockQuantity: stock.count,
+          price: stock.price,
+          categoryId: stock.categoryId,
+          categoryName: stock.categoryName,
+        })
+      );
 
       setStocks(transformedStocks);
       setError(null);
@@ -134,23 +158,77 @@ export const useStocks = (): UseStocksReturn => {
         categoryId: newStock.categoryId,
       };
 
-      // Log para debugging
-      console.log('Payload a enviar:', JSON.stringify(payload, null, 2));
-
-      const result = await trpcClient.stocks.bulkCreateIndividualStocks.mutate(payload);
-      console.log('Resultado:', result);
-
+      await trpcClient.stocks.bulkCreateIndividualStocks.mutate(payload);
       toast.success('Stock creado exitosamente');
-      fetchStocks();
+      await fetchStocks();
     } catch (err) {
-      console.error('Error creating stock:', err);
-      const errorMessage = err instanceof Error ? err.message : 'Error al crear el stock';
-      toast.error(errorMessage);
-      setError(err instanceof Error ? err : new Error(errorMessage));
+      // Verificar si el error es por exceder la cantidad de habitaciones disponibles
+      if (err instanceof Error && err.message.includes('not enough rooms available')) {
+        // Extraer los números del mensaje de error usando regex
+        const currentStock = err.message.match(/Current stock: (\d+)/)?.[1];
+        const totalRooms = err.message.match(/Total rooms: (\d+)/)?.[1];
+
+        if (currentStock && totalRooms) {
+          const availableRooms = Number(totalRooms) - Number(currentStock);
+          toast.error(
+            `No hay suficientes habitaciones disponibles. Quedan ${availableRooms} habitaciones disponibles en esta categoría.`
+          );
+        } else {
+          toast.error('No hay suficientes habitaciones disponibles en esta categoría.');
+        }
+      } else {
+        toast.error('Ha ocurrido un error al crear el stock. Por favor, inténtalo de nuevo.');
+      }
+      setError(err instanceof Error ? err : new Error('Error al crear el stock'));
     } finally {
       setIsCreating(false);
     }
   }, [newStock, fetchStocks, validateStock]);
+
+  const updateStockPrice = useCallback(
+    async (params: { fromDate: string; toDate: string; categoryId: string; price: number }) => {
+      try {
+        const updateInput: UpdateStocksPriceInput = {
+          date: formatDateForApi(params.fromDate),
+          fromDate: formatDateForApi(params.fromDate),
+          toDate: formatDateForApi(params.toDate),
+          categoryId: params.categoryId,
+          price: params.price,
+        };
+
+        await trpcClient.stocks.updateStocksPrice.mutate(updateInput);
+
+        toast.success('Precio actualizado exitosamente');
+        await fetchStocks();
+      } catch (err) {
+        console.error('Error updating stock price:', err);
+        toast.error('Error al actualizar el precio');
+        throw err;
+      }
+    },
+    [fetchStocks]
+  );
+
+  const deleteStock = useCallback(
+    async (params: { fromDate: string; toDate: string; categoryId: string; quantity: number }) => {
+      try {
+        await trpcClient.stocks.deleteStocks.mutate({
+          fromDate: formatDateForApi(params.fromDate),
+          toDate: formatDateForApi(params.toDate),
+          categoryId: params.categoryId,
+          quantity: params.quantity,
+        });
+
+        toast.success('Stock eliminado exitosamente');
+        await fetchStocks();
+      } catch (err) {
+        console.error('Error deleting stock:', err);
+        toast.error('Error al eliminar el stock');
+        throw err;
+      }
+    },
+    [fetchStocks]
+  );
 
   return {
     // Data states
@@ -172,6 +250,8 @@ export const useStocks = (): UseStocksReturn => {
     // Actions
     fetchStocks,
     createStock,
+    updateStockPrice,
+    deleteStock,
     validateStock,
   };
 };

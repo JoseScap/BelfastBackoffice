@@ -1,308 +1,283 @@
 'use client';
 
-import React, { useEffect } from 'react';
+import React, { useState, useCallback, useEffect } from 'react';
 import PageBreadcrumb from '@/components/common/PageBreadCrumb';
 import PageMetadata from '@/components/common/PageMetadata';
+import { StockCalendar } from '@/components/stock/StockCalendar';
+import { AddStockModal } from '@/components/modals/AddStockModal';
+import { ViewStockModal } from '@/components/modals/ViewStockModal';
 import { useStocks } from '@/hooks/useStocks';
 import { useCategories } from '@/hooks/useCategories';
-import type { Stock, Category, DateRange } from '@/types/api/stock';
+import { useCalendarControls } from '@/hooks/useCalendarControls';
+import type { Stock } from '@/types/api/stock';
+import Button from '@/components/ui/button/Button';
+import { BsFillHouseAddFill } from 'react-icons/bs';
 
-interface FormField {
-  label: string;
-  type: 'date' | 'number';
-  value: string | number;
-  onChange: (value: string) => void;
-  min?: string;
-  step?: string;
-}
-
-// Constantes para la configuración de la tabla
-const TABLE_HEADERS = [
-  { key: 'fromDate', label: 'Fecha Inicio' },
-  { key: 'toDate', label: 'Fecha Fin' },
-  { key: 'stockQuantity', label: 'Cantidad' },
-  { key: 'price', label: 'Precio' },
-  { key: 'categoryId', label: 'Categoría' },
-] as const;
-
-// Props interfaces
-interface CreateStockFormProps {
-  newStock: Stock;
-  setNewStock: (stock: Stock) => void;
-  categories: Category[];
-  isLoadingCategories: boolean;
-  isCreating: boolean;
-  createStock: () => void;
-}
-
-interface SearchControlsProps {
-  dateRange: DateRange;
-  setDateRange: (range: DateRange) => void;
-  selectedCategoryId: string;
-  setSelectedCategoryId: (id: string) => void;
-  categories: Category[];
-  isLoading: boolean;
-  fetchStocks: () => void;
-}
-
-interface StocksTableProps {
-  stocks: Stock[];
-  categories: Category[];
-  isLoading: boolean;
-}
-
-// Componente para el formulario de creación
-const CreateStockForm: React.FC<CreateStockFormProps> = ({
-  newStock,
-  setNewStock,
-  categories,
-  isLoadingCategories,
-  isCreating,
-  createStock,
-}) => {
-  const formFields: FormField[] = [
-    {
-      label: 'Fecha Inicio',
-      type: 'date',
-      value: newStock.fromDate,
-      onChange: (value: string) => setNewStock({ ...newStock, fromDate: value }),
-    },
-    {
-      label: 'Fecha Fin',
-      type: 'date',
-      value: newStock.toDate,
-      onChange: (value: string) => setNewStock({ ...newStock, toDate: value }),
-    },
-    {
-      label: 'Cantidad',
-      type: 'number',
-      value: newStock.stockQuantity,
-      onChange: (value: string) => {
-        const numValue = Math.max(1, Math.floor(Number(value || 1)));
-        setNewStock({ ...newStock, stockQuantity: numValue });
-      },
-      min: '1',
-      step: '1',
-    },
-    {
-      label: 'Precio',
-      type: 'number',
-      value: newStock.price,
-      onChange: (value: string) => {
-        const numValue = Math.max(0, Number(value || 0));
-        setNewStock({ ...newStock, price: numValue });
-      },
-      min: '0',
-      step: '0.01',
-    },
-  ];
-
-  return (
-    <div className="rounded-sm border border-stroke bg-white p-4 shadow-default dark:border-strokedark dark:bg-boxdark">
-      <h4 className="mb-6 text-xl font-semibold text-black dark:text-white">Crear Nuevo Stock</h4>
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
-        {formFields.map(field => (
-          <div key={field.label}>
-            <label className="mb-2.5 block text-black dark:text-white">{field.label}</label>
-            <input
-              type={field.type}
-              value={field.value}
-              onChange={e => field.onChange(e.target.value)}
-              className="w-full rounded border-[1.5px] border-stroke bg-transparent py-3 px-5 font-medium outline-none transition focus:border-primary active:border-primary disabled:cursor-default disabled:bg-whiter dark:border-form-strokedark dark:bg-form-input dark:focus:border-primary"
-              min={field.min}
-              step={field.step}
-              required
-            />
-          </div>
-        ))}
-        <div>
-          <label className="mb-2.5 block text-black dark:text-white">Categoría</label>
-          <select
-            value={newStock.categoryId}
-            onChange={e => setNewStock({ ...newStock, categoryId: e.target.value })}
-            className="w-full rounded border-[1.5px] border-stroke bg-transparent py-3 px-5 font-medium outline-none transition focus:border-primary active:border-primary disabled:cursor-default disabled:bg-whiter dark:border-form-strokedark dark:bg-form-input dark:focus:border-primary"
-            required
-            disabled={isLoadingCategories}
-          >
-            <option value="">Seleccionar categoría</option>
-            {categories.map(category => (
-              <option key={category.id} value={category.id}>
-                {category.name}
-              </option>
-            ))}
-          </select>
-        </div>
-      </div>
-      <div className="mt-4">
-        <button
-          onClick={createStock}
-          disabled={isCreating || isLoadingCategories}
-          className="flex items-center gap-2 rounded-md bg-black py-2 px-4.5 font-medium text-white hover:bg-opacity-80"
-        >
-          {isCreating ? 'Creando...' : 'Crear Stock'}
-        </button>
-      </div>
-    </div>
-  );
+// Función auxiliar para formatear fechas
+const formatDateForInput = (date: Date): string => {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, '0');
+  const day = String(date.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
 };
 
-// Componente para los controles de búsqueda
-const SearchControls: React.FC<SearchControlsProps> = ({
-  dateRange,
-  setDateRange,
-  selectedCategoryId,
-  setSelectedCategoryId,
-  categories,
-  isLoading,
-  fetchStocks,
-}) => (
-  <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-    <div className="flex items-center gap-4">
-      {(['startDate', 'endDate'] as const).map(dateKey => (
-        <div key={dateKey} className="w-full sm:w-auto">
-          <input
-            type="date"
-            value={dateRange[dateKey]}
-            onChange={e => setDateRange({ ...dateRange, [dateKey]: e.target.value })}
-            className="w-full rounded border-[1.5px] border-stroke bg-transparent py-3 px-5 font-medium outline-none transition focus:border-primary active:border-primary disabled:cursor-default disabled:bg-whiter dark:border-form-strokedark dark:bg-form-input dark:focus:border-primary"
-            required
-          />
-        </div>
-      ))}
-      <div className="w-full sm:w-auto">
-        <select
-          value={selectedCategoryId}
-          onChange={e => setSelectedCategoryId(e.target.value)}
-          className="w-full rounded border-[1.5px] border-stroke bg-transparent py-3 px-5 font-medium outline-none transition focus:border-primary active:border-primary disabled:cursor-default disabled:bg-whiter dark:border-form-strokedark dark:bg-form-input dark:focus:border-primary"
-        >
-          <option value="">Todas las categorías</option>
-          {categories.map(category => (
-            <option key={category.id} value={category.id}>
-              {category.name}
-            </option>
-          ))}
-        </select>
-      </div>
-    </div>
-    <div className="flex items-center gap-4">
-      <button
-        onClick={fetchStocks}
-        className="flex items-center gap-2 rounded-md bg-black py-2 px-4.5 font-medium text-white hover:bg-opacity-80"
-        disabled={isLoading}
-      >
-        {isLoading ? 'Cargando...' : 'Buscar Stocks'}
-      </button>
-    </div>
-  </div>
-);
+const StocksPage = () => {
+  // Estados para el calendario
+  const {
+    currentDate,
+    viewMode,
+    formattedPeriod,
+    setViewMode,
+    goToPrevPeriod,
+    goToNextPeriod,
+    goToToday,
+  } = useCalendarControls('biweek');
 
-// Componente para la tabla de stocks
-const StocksTable: React.FC<StocksTableProps> = ({ stocks, categories, isLoading }) => (
-  <div className="rounded-sm border border-stroke bg-white p-4 shadow-default dark:border-strokedark dark:bg-boxdark">
-    <h4 className="mb-6 text-xl font-semibold text-black dark:text-white">Stock Disponible</h4>
-    <div className="overflow-x-auto">
-      <table className="w-full table-auto">
-        <thead>
-          <tr className="bg-gray-2 text-left dark:bg-meta-4">
-            {TABLE_HEADERS.map(header => (
-              <th key={header.key} className="py-4 px-4 font-medium text-black dark:text-white">
-                {header.label}
-              </th>
-            ))}
-          </tr>
-        </thead>
-        <tbody>
-          {stocks.map((stock, index) => (
-            <tr key={index}>
-              <td className="border-b border-[#eee] py-5 px-4 dark:border-strokedark">
-                {new Date(stock.fromDate).toLocaleDateString()}
-              </td>
-              <td className="border-b border-[#eee] py-5 px-4 dark:border-strokedark">
-                {new Date(stock.toDate).toLocaleDateString()}
-              </td>
-              <td className="border-b border-[#eee] py-5 px-4 dark:border-strokedark">
-                {stock.stockQuantity}
-              </td>
-              <td className="border-b border-[#eee] py-5 px-4 dark:border-strokedark">
-                ${stock.price}
-              </td>
-              <td className="border-b border-[#eee] py-5 px-4 dark:border-strokedark">
-                {categories.find(c => c.id === stock.categoryId)?.name || stock.categoryId}
-              </td>
-            </tr>
-          ))}
-          {stocks.length === 0 && !isLoading && (
-            <tr>
-              <td colSpan={5} className="text-center py-4">
-                No hay stocks disponibles para el rango de fechas seleccionado
-              </td>
-            </tr>
-          )}
-          {isLoading && (
-            <tr>
-              <td colSpan={5} className="text-center py-4">
-                Cargando stocks...
-              </td>
-            </tr>
-          )}
-        </tbody>
-      </table>
-    </div>
-  </div>
-);
+  const [selectedCategory, setSelectedCategory] = useState<string>('all');
+  const [showAddModal, setShowAddModal] = useState(false);
+  const [selectedStock, setSelectedStock] = useState<Stock | null>(null);
 
-// Componente principal
-export default function StocksPage() {
+  // Hooks
   const {
     stocks,
-    isLoading,
-    isCreating,
+    isLoading: isLoadingStocks,
     newStock,
     setNewStock,
-    dateRange,
-    setDateRange,
-    selectedCategoryId,
     setSelectedCategoryId,
-    createStock,
     fetchStocks,
+    createStock,
+    updateStockPrice,
   } = useStocks();
 
   const { categories, isLoading: isLoadingCategories, fetchCategories } = useCategories();
 
+  // Cargar stocks y categorías al montar el componente
   useEffect(() => {
+    fetchStocks();
     fetchCategories();
-  }, [fetchCategories]);
+  }, [fetchStocks, fetchCategories]);
+
+  // Actualizar stocks cuando cambie la categoría seleccionada
+  useEffect(() => {
+    if (selectedCategory !== 'all') {
+      setSelectedCategoryId(selectedCategory);
+      fetchStocks();
+    }
+  }, [selectedCategory, setSelectedCategoryId, fetchStocks]);
+
+  // Manejar clic en un día
+  const handleDayClick = useCallback(
+    (date: Date) => {
+      // Asegurarnos de que la fecha esté en la zona horaria local y sin tiempo
+      const localDate = new Date(date);
+      localDate.setHours(0, 0, 0, 0);
+
+      setNewStock({
+        fromDate: localDate.toISOString().split('T')[0],
+        toDate: localDate.toISOString().split('T')[0],
+        stockQuantity: 1,
+        price: 100,
+        categoryId: selectedCategory === 'all' ? '' : selectedCategory,
+      });
+
+      setShowAddModal(true);
+    },
+    [selectedCategory, setNewStock]
+  );
+
+  // Manejar clic en un stock existente
+  const handleStockClick = useCallback((stock: Stock) => {
+    setSelectedStock(stock);
+  }, []);
+
+  // Estado de carga
+  const isLoading = isLoadingStocks || isLoadingCategories;
 
   return (
     <>
       <PageMetadata
-        title="Gestión de Stock | Belfast Backoffice"
-        description="Gestión de stock para Belfast Backoffice"
+        title="Calendario de Stock | Belfast Backoffice"
+        description="Gestión de stock de habitaciones para Belfast Backoffice"
       />
-      <PageBreadcrumb pageTitle="Gestión de Stock" />
+      <PageBreadcrumb pageTitle="Calendario de Stock" />
 
       <div className="flex flex-col gap-5 md:gap-7 2xl:gap-10">
-        <CreateStockForm
-          newStock={newStock}
-          setNewStock={setNewStock}
-          categories={categories}
-          isLoadingCategories={isLoadingCategories}
-          isCreating={isCreating}
-          createStock={createStock}
-        />
+        {/* Controles del calendario */}
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+          <div className="flex items-center gap-2">
+            <button
+              onClick={goToPrevPeriod}
+              className="rounded-md border border-stroke p-2 hover:bg-gray-100 dark:border-strokedark dark:hover:bg-meta-4"
+              aria-label={
+                viewMode === 'month'
+                  ? 'Mes anterior'
+                  : viewMode === 'biweek'
+                  ? 'Quincena anterior'
+                  : 'Semana anterior'
+              }
+            >
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                className="h-5 w-5"
+                viewBox="0 0 20 20"
+                fill="currentColor"
+              >
+                <path
+                  fillRule="evenodd"
+                  d="M12.707 5.293a1 1 0 010 1.414L9.414 10l3.293 3.293a1 1 0 01-1.414 1.414l-4-4a1 1 0 010-1.414l4-4a1 1 0 011.414 0z"
+                  clipRule="evenodd"
+                />
+              </svg>
+            </button>
 
-        <SearchControls
-          dateRange={dateRange}
-          setDateRange={setDateRange}
-          selectedCategoryId={selectedCategoryId}
-          setSelectedCategoryId={setSelectedCategoryId}
-          categories={categories}
-          isLoading={isLoading}
-          fetchStocks={fetchStocks}
-        />
+            <h2 className="text-xl font-semibold text-black dark:text-white">{formattedPeriod}</h2>
 
-        <StocksTable stocks={stocks} categories={categories} isLoading={isLoading} />
+            <button
+              onClick={goToNextPeriod}
+              className="rounded-md border border-stroke p-2 hover:bg-gray-100 dark:border-strokedark dark:hover:bg-meta-4"
+              aria-label={
+                viewMode === 'month'
+                  ? 'Mes siguiente'
+                  : viewMode === 'biweek'
+                  ? 'Quincena siguiente'
+                  : 'Semana siguiente'
+              }
+            >
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                className="h-5 w-5"
+                viewBox="0 0 20 20"
+                fill="currentColor"
+              >
+                <path
+                  fillRule="evenodd"
+                  d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z"
+                  clipRule="evenodd"
+                />
+              </svg>
+            </button>
+
+            <button
+              onClick={goToToday}
+              className="ml-2 rounded-md border border-stroke px-3 py-1 text-sm hover:bg-gray-100 dark:border-strokedark dark:hover:bg-meta-4"
+            >
+              Hoy
+            </button>
+
+            <div className="ml-4 flex items-center border border-stroke rounded-md overflow-hidden">
+              <button
+                onClick={() => setViewMode('week')}
+                className={`px-3 py-1 text-sm ${
+                  viewMode === 'week'
+                    ? 'bg-slate-200 text-black'
+                    : 'hover:bg-gray-100 dark:hover:bg-meta-4'
+                }`}
+              >
+                Semana
+              </button>
+              <button
+                onClick={() => setViewMode('biweek')}
+                className={`px-3 py-1 text-sm border-l border-r border-stroke ${
+                  viewMode === 'biweek'
+                    ? 'bg-slate-200 text-black'
+                    : 'hover:bg-gray-100 dark:hover:bg-meta-4'
+                }`}
+              >
+                Quincena
+              </button>
+              <button
+                onClick={() => setViewMode('month')}
+                className={`px-3 py-1 text-sm ${
+                  viewMode === 'month'
+                    ? 'bg-slate-200 text-black'
+                    : 'hover:bg-gray-100 dark:hover:bg-meta-4'
+                }`}
+              >
+                Mes
+              </button>
+            </div>
+          </div>
+
+          <div className="flex items-center gap-2">
+            <select
+              value={selectedCategory}
+              onChange={e => {
+                const value = e.target.value;
+                setSelectedCategory(value);
+                setSelectedCategoryId(value === 'all' ? '' : value);
+              }}
+              className="rounded-md border border-stroke px-3 py-2.5 dark:border-strokedark dark:bg-boxdark"
+              disabled={isLoadingCategories}
+            >
+              <option value="all">Todas las categorías</option>
+              {categories.map(category => (
+                <option key={category.id} value={category.id}>
+                  {category.name}
+                </option>
+              ))}
+            </select>
+
+            <Button
+              onClick={() => {
+                const today = new Date();
+                const tomorrow = new Date(today);
+                tomorrow.setDate(today.getDate() + 1);
+
+                setNewStock({
+                  fromDate: formatDateForInput(today),
+                  toDate: formatDateForInput(tomorrow),
+                  stockQuantity: 1,
+                  price: 100,
+                  categoryId: selectedCategory === 'all' ? '' : selectedCategory,
+                });
+                setShowAddModal(true);
+              }}
+              disabled={isLoading}
+              endIcon={<BsFillHouseAddFill size={20} />}
+              className=""
+            >
+              Añadir Stock
+            </Button>
+          </div>
+        </div>
+
+        {/* Calendario */}
+        <div className="rounded-sm border border-stroke bg-white shadow-default dark:border-strokedark dark:bg-boxdark">
+          <StockCalendar
+            currentDate={currentDate}
+            viewMode={viewMode}
+            stocks={stocks}
+            categories={categories}
+            onDayClick={handleDayClick}
+            onStockClick={handleStockClick}
+          />
+        </div>
       </div>
+
+      {/* Modal para añadir stock */}
+      <AddStockModal
+        isOpen={showAddModal}
+        onClose={() => setShowAddModal(false)}
+        onSubmit={async () => {
+          await createStock();
+        }}
+        newStock={newStock}
+        setNewStock={setNewStock}
+        categories={categories}
+      />
+
+      {/* Modal para ver detalles del stock */}
+      {selectedStock && (
+        <ViewStockModal
+          isOpen={!!selectedStock}
+          onClose={() => setSelectedStock(null)}
+          stock={selectedStock}
+          category={categories.find(c => c.id === selectedStock.categoryId)}
+          onUpdatePrice={updateStockPrice}
+        />
+      )}
     </>
   );
-}
+};
+
+export default StocksPage;
