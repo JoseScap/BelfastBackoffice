@@ -5,6 +5,7 @@ import { roomRouter } from '@/types/trpc/room';
 import { roomCategoryRouter } from '@/types/trpc/roomCategory';
 import { roomStatusRouter } from '@/types/trpc/roomStatus';
 import { stockRouter } from '@/types/trpc/stock';
+import { reservationRouter } from '@/types/trpc/reservation';
 
 import { LoginInput, RegisterInput, User, LoginResponse } from '@/types/api/auth';
 import { PingResponse } from '@/types/api/status';
@@ -37,6 +38,16 @@ import {
   BulkCreateIndividualStocksResponse,
   GetStocksByFiltersResponse,
 } from '@/types/api/stock';
+import {
+  ReservationResponse,
+  CreateReservationInput,
+  UpdateReservationInput,
+  UpdateReservationStatusInput,
+  DeleteReservationInput,
+  RestoreReservationInput,
+  GetReservationByIdInput,
+  GetReservationsByFilterInput,
+} from '@/types/api/reservation';
 
 // Definir el router principal
 export const appRouter = t.router({
@@ -46,11 +57,13 @@ export const appRouter = t.router({
   roomCategories: roomCategoryRouter,
   roomStatus: roomStatusRouter,
   stocks: stockRouter,
+  reservations: reservationRouter,
 });
 
-// Tipos inferidos para entradas y salidass
+// Tipo del router
 export type AppRouter = typeof appRouter;
 
+// Tipos de entrada
 export type RouterInputs = {
   auth: {
     login: LoginInput;
@@ -79,8 +92,18 @@ export type RouterInputs = {
     bulkCreateIndividualStocks: BulkCreateIndividualStocksInput;
     getStocksByFilters: GetStocksByFiltersInput;
   };
+  reservations: {
+    create: CreateReservationInput;
+    getByFilter: GetReservationsByFilterInput;
+    getById: GetReservationByIdInput;
+    update: UpdateReservationInput;
+    updateStatus: UpdateReservationStatusInput;
+    delete: DeleteReservationInput;
+    restore: RestoreReservationInput;
+  };
 };
 
+// Tipos de salida
 export type RouterOutputs = {
   auth: {
     login: LoginResponse;
@@ -115,5 +138,14 @@ export type RouterOutputs = {
   stocks: {
     bulkCreateIndividualStocks: BulkCreateIndividualStocksResponse;
     getStocksByFilters: GetStocksByFiltersResponse;
+  };
+  reservations: {
+    create: ReservationResponse;
+    getByFilter: ReservationResponse[];
+    getById: ReservationResponse;
+    update: ReservationResponse;
+    updateStatus: ActionResponse;
+    delete: ActionResponse;
+    restore: ActionResponse;
   };
 };
