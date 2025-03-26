@@ -1,13 +1,11 @@
 'use client';
 
-import React, { useState, useMemo, useCallback } from 'react';
+import React, { useState, useMemo } from 'react';
 import PageBreadcrumb from '@/components/common/PageBreadCrumb';
-import { mockAppointments } from '@/mock-data';
-import { AppointmentStatusValue } from '@/types/hotel';
+import { AppointmentStatusValue, APPOINTMENT_STATUS } from '@/types/hotel';
 import Pagination from '@/components/tables/Pagination';
 import PageMetadata from '@/components/common/PageMetadata';
 import SearchFilter from '@/components/common/SearchFilter';
-import { DashboardIcons, IconWrapper } from '@/components/common/icons';
 import {
   GuestCell,
   RoomCell,
@@ -17,44 +15,26 @@ import {
   PriceCell,
   ActionsCell,
 } from '@/components/tables/TableCells';
+import { trpcClient } from '@/api/trpc/client';
+import type {
+  ListReservationsByStatusResponse,
+  ReservationStatusResponse,
+} from '@/types/api/reservation';
+import toast from 'react-hot-toast';
+import Button from '@/components/ui/button/Button';
+import { BsCalendarPlus } from 'react-icons/bs';
+import { AddReservationModal } from '@/components/modals/AddReservationModal';
+import type { ReservationFormData } from '@/types/reservation';
+import ViewReservationModal from '@/components/modals/ViewReservationModal';
 
-// Tipos
-type StatusConfig = {
-  label: string;
-};
-
-type SourceKey = 'app' | 'manual';
-type StatusKey = AppointmentStatusValue;
-type SourceFilterKey = 'all' | SourceKey;
-
-// Constantes
+// Constants
 const ITEMS_PER_PAGE = 10;
 
-const STATUS_CONFIG: Record<StatusKey, StatusConfig> = {
-  Aprobado: {
-    label: 'Aprobado',
-  },
-  Solicitado: {
-    label: 'Solicitado',
-  },
-  'Check-in': {
-    label: 'Check-in',
-  },
-  'Check-out': {
-    label: 'Check-out',
-  },
-  Cancelado: {
-    label: 'Cancelado',
-  },
-  Sobrevendido: {
-    label: 'Sobrevendido',
-  },
-};
-
-const SOURCE_CONFIG: Record<SourceKey, string> = {
-  app: 'Aplicación',
-  manual: 'Manual',
-} as const;
+const SOURCE_OPTIONS = [
+  { value: 'all', label: 'Todas las Fuentes' },
+  { value: 'app', label: 'Aplicación' },
+  { value: 'manual', label: 'Manual' },
+];
 
 const TABLE_HEADERS = [
   { key: 'guest', label: 'Huésped', minWidth: '150px' },
@@ -67,81 +47,206 @@ const TABLE_HEADERS = [
   { key: 'actions', label: 'Acciones', minWidth: 'auto' },
 ] as const;
 
+// Types
+type SourceKey = 'app' | 'manual';
+type SourceFilterKey = 'all' | SourceKey;
+
+// Utility functions
+const mapApiStatusToUiStatus = (apiStatus: string): AppointmentStatusValue => {
+  const statusMap: Record<string, AppointmentStatusValue> = {
+    PENDING: APPOINTMENT_STATUS.REQUESTED,
+    APPROVED: APPOINTMENT_STATUS.APPROVED,
+    CHECKED_IN: APPOINTMENT_STATUS.CHECK_IN,
+    CHECKED_OUT: APPOINTMENT_STATUS.CHECK_OUT,
+    CANCELED: APPOINTMENT_STATUS.CANCELLED,
+    OVERBOOKED: APPOINTMENT_STATUS.OVERBOOKED,
+  };
+
+  return statusMap[apiStatus] || APPOINTMENT_STATUS.REQUESTED;
+};
+
+const mapApiSourceToUiSource = (apiSource: string): string =>
+  ({
+    APP: 'Aplicación',
+    BACKOFFICE: 'Manual',
+    WEBSITE: 'Sitio Web',
+    BOOKING: 'Booking',
+    WHATSAPP: 'WhatsApp',
+    OTHER_PORTAL: 'Otro Portal',
+    OTHERS: 'Otros',
+  }[apiSource] || apiSource);
+
+const normalizeText = (text: string) => text.toLowerCase().trim();
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+const searchInPassengers = (passengers: any[], searchTerm: string) => {
+  const search = normalizeText(searchTerm);
+  return passengers.some(
+    passenger =>
+      normalizeText(passenger.firstName).includes(search) ||
+      normalizeText(passenger.lastName).includes(search) ||
+      normalizeText(`${passenger.firstName} ${passenger.lastName}`).includes(search) ||
+      normalizeText(passenger.email).includes(search)
+  );
+};
+
 const ReservationsPage = () => {
+  // State
   const [currentPage, setCurrentPage] = useState(1);
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
   const [sourceFilter, setSourceFilter] = useState<SourceFilterKey>('all');
+  const [isLoading, setIsLoading] = useState(false);
+  const [reservations, setReservations] = useState<ListReservationsByStatusResponse[]>([]);
+  const [statuses, setStatuses] = useState<ReservationStatusResponse[]>([]);
+  const [isAddModalOpen, setIsAddModalOpen] = useState(false);
+  const [selectedReservation, setSelectedReservation] =
+    useState<ListReservationsByStatusResponse | null>(null);
+  const [isViewModalOpen, setIsViewModalOpen] = useState(false);
 
-  // Handlers
-  const handleViewReservation = useCallback((id: string) => {
-    console.log('Ver reservación:', id);
-    // Implementar lógica para ver detalles
+  // Data fetching
+  React.useEffect(() => {
+    const fetchStatuses = async () => {
+      try {
+        const data = await trpcClient.reservations.getAllStatuses.query();
+        setStatuses(data);
+      } catch (error) {
+        console.error('Error fetching statuses:', error);
+        toast.error('Error al cargar los estados');
+      }
+    };
+
+    fetchStatuses();
   }, []);
 
-  const handleDeleteReservation = useCallback((id: string) => {
-    console.log('Eliminar reservación:', id);
-    // Implementar lógica para eliminar
+  // Initial fetch of reservations
+  React.useEffect(() => {
+    const fetchReservations = async () => {
+      try {
+        setIsLoading(true);
+        const data = await trpcClient.reservations.list.query({});
+        setReservations(data);
+      } catch (error) {
+        console.error('Error fetching reservations:', error);
+        toast.error('Error al cargar las reservaciones');
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchReservations();
   }, []);
 
-  const handleCreateReservation = useCallback(() => {
-    console.log('Crear nueva reservación');
-    // Implementar lógica para crear
-  }, []);
+  // Memoized values
+  const filteredReservations = useMemo(() => {
+    if (!reservations?.length) return [];
 
-  // Memoizar los appointments filtrados
-  const filteredAppointments = useMemo(() => {
-    const searchLower = searchTerm.toLowerCase();
-    return mockAppointments.filter(appointment => {
-      const matchesSearch =
-        appointment.guest.firstName.toLowerCase().includes(searchLower) ||
-        appointment.guest.lastName.toLowerCase().includes(searchLower) ||
-        appointment.room.number.toString().includes(searchTerm) ||
-        appointment.status.value.toLowerCase().includes(searchLower);
+    return reservations
+      .filter(reservation => {
+        if (!searchTerm) return true;
 
-      const matchesStatus = statusFilter === 'all' || appointment.status.value === statusFilter;
-      const matchesSource = sourceFilter === 'all' || appointment.source === sourceFilter;
+        const search = normalizeText(searchTerm);
 
-      return matchesSearch && matchesStatus && matchesSource;
-    });
-  }, [searchTerm, statusFilter, sourceFilter]);
+        // Search by reservation ID
+        if (reservation.id.toLowerCase().includes(search)) return true;
 
-  // Memoizar los appointments ordenados
-  const sortedAppointments = useMemo(() => {
-    return [...filteredAppointments].sort(
-      (a, b) => new Date(b.checkInDate).getTime() - new Date(a.checkInDate).getTime()
-    );
-  }, [filteredAppointments]);
+        // Search in all passengers
+        if (searchInPassengers(reservation.passengers, searchTerm)) return true;
 
-  // Paginar appointments
-  const currentAppointments = useMemo(
+        // Search in category name
+        if (normalizeText(reservation.category.name).includes(search)) return true;
+
+        return false;
+      })
+      .filter(reservation => {
+        // Status filter
+        const matchesStatus = statusFilter === 'all' || reservation.status.value === statusFilter;
+
+        // Source filter
+        const matchesSource =
+          sourceFilter === 'all' || reservation.source.toLowerCase() === sourceFilter;
+
+        return matchesStatus && matchesSource;
+      });
+  }, [reservations, searchTerm, statusFilter, sourceFilter]);
+
+  const sortedReservations = useMemo(
     () =>
-      sortedAppointments.slice((currentPage - 1) * ITEMS_PER_PAGE, currentPage * ITEMS_PER_PAGE),
-    [sortedAppointments, currentPage]
+      [...filteredReservations].sort(
+        (a, b) => new Date(b.checkInDate).getTime() - new Date(a.checkInDate).getTime()
+      ),
+    [filteredReservations]
   );
 
-  // Opciones de los filtros
+  const currentReservations = useMemo(
+    () =>
+      sortedReservations.slice((currentPage - 1) * ITEMS_PER_PAGE, currentPage * ITEMS_PER_PAGE),
+    [sortedReservations, currentPage]
+  );
+
   const statusOptions = useMemo(
     () => [
-      { value: 'all' as const, label: 'Todos los Estados' },
-      ...Object.entries(STATUS_CONFIG).map(([value, { label }]) => ({
-        value: value as StatusKey,
-        label,
-      })),
+      { value: 'all', label: 'Todos los Estados' },
+      ...(statuses?.map(status => ({
+        value: status.value,
+        label: status.value,
+      })) || []),
     ],
-    []
+    [statuses]
   );
 
-  const sourceOptions = useMemo(
-    () => [
-      { value: 'all' as const, label: 'Todas las Fuentes' },
-      ...Object.entries(SOURCE_CONFIG).map(([value, label]) => ({
-        value: value as SourceKey,
-        label,
-      })),
-    ],
-    []
-  );
+  // Reset page when filters change
+  React.useEffect(() => {
+    setCurrentPage(1);
+  }, [searchTerm, statusFilter, sourceFilter]);
+
+  const handleCreateReservation = async (data: ReservationFormData) => {
+    try {
+      await trpcClient.reservations.create.mutate({
+        checkInDate: data.checkInDate,
+        checkInTime: data.checkInTime,
+        checkOutDate: data.checkOutDate,
+        checkOutTime: data.checkOutTime,
+        categoryId: data.categoryId,
+        mainPassenger: data.passengers[0],
+        source: data.source as
+          | 'BACKOFFICE'
+          | 'APP'
+          | 'WEBSITE'
+          | 'BOOKING'
+          | 'WHATSAPP'
+          | 'OTHER_PORTAL'
+          | 'OTHERS',
+        notes: data.notes,
+        extraDiscount: data.appliedDiscount,
+      });
+
+      toast.success('Reservación creada exitosamente');
+      setIsAddModalOpen(false);
+
+      // Refetch reservations
+      const updatedReservations = await trpcClient.reservations.list.query({});
+      setReservations(updatedReservations);
+    } catch (error) {
+      console.error('Error creating reservation:', error);
+      toast.error('Error al crear la reservación');
+    }
+  };
+
+  const handleViewReservation = (reservation: ListReservationsByStatusResponse) => {
+    setSelectedReservation(reservation);
+    setIsViewModalOpen(true);
+  };
+
+  const handleRefetchReservations = async () => {
+    try {
+      const updatedReservations = await trpcClient.reservations.list.query({});
+      setReservations(updatedReservations);
+    } catch (error) {
+      console.error('Error fetching reservations:', error);
+      toast.error('Error al actualizar la lista de reservaciones');
+    }
+  };
 
   return (
     <>
@@ -152,107 +257,118 @@ const ReservationsPage = () => {
       <PageBreadcrumb pageTitle="Reservas" />
 
       <div className="flex flex-col gap-5 md:gap-7 2xl:gap-10">
+        {/* Search and Filters */}
         <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-          <div className="flex items-center gap-4 flex-wrap">
-            <SearchFilter
-              searchTerm={searchTerm}
-              onSearchChange={setSearchTerm}
-              filters={[
-                {
-                  id: 'status',
-                  label: 'Estado',
-                  value: statusFilter,
-                  onChange: setStatusFilter,
-                  options: [{ value: 'all', label: 'Todos los Estados' }, ...statusOptions],
-                },
-              ]}
-              totalResults={filteredAppointments.length}
-            />
-            <div className="w-full sm:w-auto">
-              <select
-                className="w-full rounded-md border border-stroke bg-transparent py-2 px-4 outline-none focus:border-primary dark:border-strokedark dark:bg-boxdark dark:focus:border-primary"
-                value={sourceFilter}
-                onChange={e => setSourceFilter(e.target.value as SourceFilterKey)}
-                aria-label="Filtrar por fuente"
-              >
-                {sourceOptions.map(option => (
-                  <option key={option.value} value={option.value}>
-                    {option.label}
-                  </option>
-                ))}
-              </select>
-            </div>
-          </div>
+          <SearchFilter
+            searchTerm={searchTerm}
+            onSearchChange={setSearchTerm}
+            filters={[
+              {
+                id: 'status',
+                label: 'Estado',
+                value: statusFilter,
+                onChange: value => setStatusFilter(value),
+                options: statusOptions,
+              },
+              {
+                id: 'source',
+                label: 'Fuente',
+                value: sourceFilter,
+                onChange: value => setSourceFilter(value as SourceFilterKey),
+                options: SOURCE_OPTIONS,
+              },
+            ]}
+            totalResults={filteredReservations.length}
+          />
 
           <div className="flex items-center gap-4">
-            <button
-              onClick={handleCreateReservation}
-              className="flex items-center gap-2 rounded-md bg-primary py-2 px-4.5 font-medium text-white hover:bg-opacity-80 focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2"
-              aria-label="Crear nueva reservación"
+            <Button
+              onClick={() => setIsAddModalOpen(true)}
+              startIcon={<BsCalendarPlus size={16} />}
             >
-              <IconWrapper className="fill-white">
-                <DashboardIcons.Alert />
-              </IconWrapper>
-              Nueva Reservación
-            </button>
+              Nueva Reserva
+            </Button>
           </div>
         </div>
 
+        {/* Table */}
         <div className="rounded-sm border border-stroke bg-white px-5 pb-2.5 pt-6 shadow-default dark:border-strokedark dark:bg-boxdark sm:px-7.5 xl:pb-1">
           <div className="max-w-full overflow-x-auto">
-            <table className="w-full table-auto" role="grid" aria-label="Tabla de reservaciones">
-              <thead>
-                <tr className="bg-gray-2 text-left dark:bg-meta-4">
-                  {TABLE_HEADERS.map(header => (
-                    <th
-                      key={header.key}
-                      className={`${
-                        header.minWidth ? `min-w-[${header.minWidth}]` : ''
-                      } py-4 px-4 font-medium text-black dark:text-white`}
-                      scope="col"
-                    >
-                      {header.label}
-                    </th>
-                  ))}
-                </tr>
-              </thead>
-              <tbody>
-                {currentAppointments.map(appointment => (
-                  <tr key={appointment.id}>
-                    <GuestCell
-                      firstName={appointment.guest.firstName}
-                      lastName={appointment.guest.lastName}
-                      email={appointment.guest.email}
-                    />
-                    <RoomCell
-                      number={appointment.room.number}
-                      categoryName={appointment.room.category.name}
-                    />
-                    <DateCell date={appointment.checkInDate} />
-                    <DateCell date={appointment.checkOutDate} />
-                    <AppointmentStatusCell status={appointment.status.value} />
-                    <SourceCell label={SOURCE_CONFIG[appointment.source]} />
-                    <PriceCell amount={appointment.totalPrice} />
-                    <ActionsCell
-                      onView={() => handleViewReservation(appointment.id)}
-                      onDelete={() => handleDeleteReservation(appointment.id)}
-                    />
+            {isLoading ? (
+              <div className="flex justify-center items-center py-8">
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary" />
+              </div>
+            ) : (
+              <table className="w-full table-auto" role="grid" aria-label="Tabla de reservaciones">
+                <thead>
+                  <tr className="bg-gray-2 text-left dark:bg-meta-4">
+                    {TABLE_HEADERS.map(header => (
+                      <th
+                        key={header.key}
+                        className={`${
+                          header.minWidth ? `min-w-[${header.minWidth}]` : ''
+                        } py-4 px-4 font-medium text-black dark:text-white`}
+                        scope="col"
+                      >
+                        {header.label}
+                      </th>
+                    ))}
                   </tr>
-                ))}
-              </tbody>
-            </table>
+                </thead>
+                <tbody>
+                  {currentReservations.map(reservation => (
+                    <tr key={reservation.id}>
+                      <GuestCell
+                        firstName={reservation.passengers[0].firstName}
+                        lastName={reservation.passengers[0].lastName}
+                        email={reservation.passengers[0].email}
+                      />
+                      <RoomCell
+                        number={parseInt(reservation.category.id)}
+                        categoryName={reservation.category.name}
+                      />
+                      <DateCell date={reservation.checkInDate} />
+                      <DateCell date={reservation.checkOutDate} />
+                      <AppointmentStatusCell
+                        status={mapApiStatusToUiStatus(reservation.status.value)}
+                      />
+                      <SourceCell label={mapApiSourceToUiSource(reservation.source)} />
+                      <PriceCell amount={reservation.appliedDiscount} />
+                      <ActionsCell
+                        onView={() => handleViewReservation(reservation)}
+                        onDelete={() => console.log('Eliminar reservación:', reservation.id)}
+                      />
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            )}
           </div>
         </div>
 
+        {/* Pagination */}
         <div className="flex items-center justify-between">
           <Pagination
             currentPage={currentPage}
-            totalItems={sortedAppointments.length}
+            totalItems={sortedReservations.length}
             itemsPerPage={ITEMS_PER_PAGE}
             onPageChange={setCurrentPage}
           />
         </div>
       </div>
+
+      <ViewReservationModal
+        isOpen={isViewModalOpen}
+        onClose={() => setIsViewModalOpen(false)}
+        reservation={selectedReservation}
+        onUpdate={handleRefetchReservations}
+      />
+
+      <AddReservationModal
+        isOpen={isAddModalOpen}
+        onClose={() => setIsAddModalOpen(false)}
+        onSubmit={handleCreateReservation}
+      />
     </>
   );
 };
