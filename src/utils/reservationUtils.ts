@@ -60,6 +60,7 @@ export const formatDateForInput = (dateStr: string) => {
 
 export const normalizeText = (text: string) => text.toLowerCase().trim();
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 export const searchInPassengers = (passengers: any[], searchTerm: string) => {
   const search = normalizeText(searchTerm);
   return passengers.some(

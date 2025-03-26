@@ -27,14 +27,6 @@ export const PassengerAccordion: React.FC<PassengerAccordionProps> = ({
   onRemove,
   canRemove,
 }) => {
-  const handleRemoveClick = React.useCallback(
-    (e: React.MouseEvent<HTMLButtonElement>) => {
-      e.stopPropagation();
-      onRemove();
-    },
-    [onRemove]
-  );
-
   return (
     <div className="border border-stroke rounded-lg dark:border-strokedark overflow-hidden">
       {/* Cabecera del acordeón */}

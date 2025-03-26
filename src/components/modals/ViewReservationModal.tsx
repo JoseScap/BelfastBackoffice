@@ -3,7 +3,6 @@ import Modal from '@/components/common/Modal';
 import Button from '@/components/ui/button/Button';
 import { BsPeople, BsHouse, BsPencil, BsTrash, BsX, BsCheck } from 'react-icons/bs';
 import type { ListReservationsByStatusResponse } from '@/types/api/reservation';
-import { AppointmentStatusValue, APPOINTMENT_STATUS } from '@/types/hotel';
 import toast from 'react-hot-toast';
 import { trpcClient } from '@/api/trpc';
 import { useCategories } from '@/hooks/useCategories';
@@ -86,20 +85,6 @@ interface ViewReservationModalProps {
   isLoading?: boolean;
   onUpdate?: () => void;
 }
-
-// Utility function for mapping API status to UI status
-const mapApiStatusToUiStatus = (apiStatus: string): AppointmentStatusValue => {
-  const statusMap: Record<string, AppointmentStatusValue> = {
-    PENDING: APPOINTMENT_STATUS.REQUESTED,
-    APPROVED: APPOINTMENT_STATUS.APPROVED,
-    CHECKED_IN: APPOINTMENT_STATUS.CHECK_IN,
-    CHECKED_OUT: APPOINTMENT_STATUS.CHECK_OUT,
-    CANCELED: APPOINTMENT_STATUS.CANCELLED,
-    OVERBOOKED: APPOINTMENT_STATUS.OVERBOOKED,
-  };
-
-  return statusMap[apiStatus] || APPOINTMENT_STATUS.REQUESTED;
-};
 
 // Utility function for mapping API source to UI source
 const mapApiSourceToUiSource = (apiSource: string): string =>
