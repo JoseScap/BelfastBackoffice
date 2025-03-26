@@ -114,6 +114,13 @@ export const listReservationsByStatusResponseSchema = z.object({
     id: z.string(),
     name: z.string(),
   }),
+  room: z
+    .object({
+      id: z.string(),
+      number: z.number(),
+      floor: z.number(),
+    })
+    .optional(),
 });
 
 export const reservationStatusResponseSchema = z.object({
