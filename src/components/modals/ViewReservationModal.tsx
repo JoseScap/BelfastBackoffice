@@ -157,7 +157,7 @@ const ViewReservationModal: React.FC<ViewReservationModalProps> = ({
           setSelectedRoomDetails({
             id: roomDetails.id,
             number: roomDetails.number,
-            floor: roomDetails.floor,
+            floor: Number(roomDetails.floor),
           });
         }
       } else {
@@ -197,7 +197,7 @@ const ViewReservationModal: React.FC<ViewReservationModalProps> = ({
           setSelectedRoomDetails({
             id: selectedRoom.id,
             number: selectedRoom.number,
-            floor: selectedRoom.floor,
+            floor: Number(selectedRoom.floor),
           });
         }
       }

@@ -66,7 +66,7 @@ export const PassengerAccordion: React.FC<PassengerAccordionProps> = ({
         </div>
         <div className="flex items-center gap-2">
           {canRemove && (
-            <Button variant="warning" size="sm" onClick={handleRemoveClick}>
+            <Button variant="warning" size="sm" onClick={() => onRemove()}>
               Eliminar
             </Button>
           )}

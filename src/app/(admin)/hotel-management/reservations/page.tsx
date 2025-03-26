@@ -24,7 +24,7 @@ import toast from 'react-hot-toast';
 import Button from '@/components/ui/button/Button';
 import { BsCalendarPlus } from 'react-icons/bs';
 import { AddReservationModal } from '@/components/modals/AddReservationModal';
-import type { ReservationFormData } from '@/components/modals/AddReservationModal';
+import type { ReservationFormData } from '@/types/reservation';
 import ViewReservationModal from '@/components/modals/ViewReservationModal';
 
 // Constants
@@ -208,13 +208,17 @@ const ReservationsPage = () => {
         checkOutDate: data.checkOutDate,
         checkOutTime: data.checkOutTime,
         categoryId: data.categoryId,
-        roomId: data.roomId,
         mainPassenger: data.passengers[0],
-        additionalPassengers: data.passengers.slice(1),
-        source: data.source,
-        status: data.status,
+        source: data.source as
+          | 'BACKOFFICE'
+          | 'APP'
+          | 'WEBSITE'
+          | 'BOOKING'
+          | 'WHATSAPP'
+          | 'OTHER_PORTAL'
+          | 'OTHERS',
         notes: data.notes,
-        appliedDiscount: data.appliedDiscount,
+        extraDiscount: data.appliedDiscount,
       });
 
       toast.success('Reservación creada exitosamente');

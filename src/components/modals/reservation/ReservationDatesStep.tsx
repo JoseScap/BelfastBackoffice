@@ -1,5 +1,5 @@
 import React from 'react';
-import type { ReservationFormData } from '../AddReservationModal';
+import type { ReservationFormData } from '@/types/reservation';
 import type { RoomCategoryResponse } from '@/types/api/roomCategory';
 
 interface ReservationDatesStepProps {
