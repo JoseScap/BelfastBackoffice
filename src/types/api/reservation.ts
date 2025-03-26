@@ -120,7 +120,7 @@ export const listReservationsByStatusResponseSchema = z.object({
       number: z.number(),
       floor: z.number(),
     })
-    .optional(),
+    .optional()
 });
 
 export const reservationStatusResponseSchema = z.object({
