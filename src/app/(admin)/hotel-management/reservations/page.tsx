@@ -30,27 +30,11 @@ import ViewReservationModal from '@/components/modals/ViewReservationModal';
 // Constants
 const ITEMS_PER_PAGE = 10;
 
-export const RESERVATION_SOURCES = {
-  BACKOFFICE: 'BACKOFFICE',
-  APP: 'APP',
-  WEBSITE: 'WEBSITE',
-  BOOKING: 'BOOKING',
-  WHATSAPP: 'WHATSAPP',
-  OTHER_PORTAL: 'OTHER_PORTAL',
-  OTHERS: 'OTHERS',
-} as const;
-
-export type ReservationSource = (typeof RESERVATION_SOURCES)[keyof typeof RESERVATION_SOURCES];
-
-export const RESERVATION_SOURCE_DESCRIPTIONS: Record<ReservationSource, string> = {
-  [RESERVATION_SOURCES.BACKOFFICE]: 'Nuestra plataforma de gestión de reservas',
-  [RESERVATION_SOURCES.APP]: 'Nuestra app móvil',
-  [RESERVATION_SOURCES.WEBSITE]: 'El website del hotel',
-  [RESERVATION_SOURCES.BOOKING]: 'Booking.com',
-  [RESERVATION_SOURCES.WHATSAPP]: 'WhatsApp',
-  [RESERVATION_SOURCES.OTHER_PORTAL]: 'Otro portal de reservas',
-  [RESERVATION_SOURCES.OTHERS]: 'Otros (Facebook, Instagram, teléfono fijo, etc.)',
-};
+const SOURCE_OPTIONS = [
+  { value: 'all', label: 'Todas las Fuentes' },
+  { value: 'app', label: 'Aplicación' },
+  { value: 'manual', label: 'Manual' },
+];
 
 const TABLE_HEADERS = [
   { key: 'guest', label: 'Huésped', minWidth: '150px' },
@@ -291,10 +275,7 @@ const ReservationsPage = () => {
                 label: 'Fuente',
                 value: sourceFilter,
                 onChange: value => setSourceFilter(value as SourceFilterKey),
-                options: Object.entries(RESERVATION_SOURCES).map(([value]) => ({
-                  value,
-                  label: RESERVATION_SOURCE_DESCRIPTIONS[value as ReservationSource],
-                })),
+                options: SOURCE_OPTIONS,
               },
             ]}
             totalResults={filteredReservations.length}
