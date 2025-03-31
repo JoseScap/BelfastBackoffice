@@ -1,3 +1,5 @@
+'use client';
+
 import React from 'react';
 import ReactModal from 'react-modal';
 import { IconWrapper } from './icons';
@@ -39,6 +41,7 @@ const Modal: React.FC<ModalProps> = ({
       shouldCloseOnOverlayClick={true}
       shouldCloseOnEsc={true}
       preventScroll={true}
+      contentLabel={title}
     >
       {/* Header */}
       <div className="flex items-center justify-between border-b border-stroke p-4 dark:border-strokedark">
