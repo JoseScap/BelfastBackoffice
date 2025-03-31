@@ -1,4 +1,6 @@
-import React, { useEffect } from 'react';
+'use client';
+
+import React from 'react';
 import ReactModal from 'react-modal';
 import { IconWrapper } from './icons';
 import { BsX } from 'react-icons/bs';
@@ -22,13 +24,6 @@ const Modal: React.FC<ModalProps> = ({
   showCloseButton = true,
   footer,
 }) => {
-  useEffect(() => {
-    // Configurar el elemento raíz para el modal cuando el componente se monte
-    if (typeof window !== 'undefined') {
-      ReactModal.setAppElement('body');
-    }
-  }, []);
-
   const sizeClasses = {
     sm: 'max-w-md',
     md: 'max-w-2xl',
