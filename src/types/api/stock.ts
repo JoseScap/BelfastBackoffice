@@ -29,11 +29,11 @@ export interface GetStocksByFiltersResponse {
   individualStocks: StocksByDateResponse[];
 }
 
-export interface BulkCreateIndividualStocksResponse {
+export interface bulkCreateStocksResponse {
   createdStocks: number;
 }
 
-export interface BulkCreateIndividualStocksInput {
+export interface bulkCreateStocksInput {
   packageName?: string;
   isBundle?: boolean;
   price: number;

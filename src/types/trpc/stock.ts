@@ -3,7 +3,7 @@ import { stockSchemas } from '@/types/schemas/stock';
 
 // Router definition
 export const stockRouter = t.router({
-  bulkCreateIndividualStocks: t.procedure
+  bulkCreateStocks: t.procedure
     .input(stockSchemas.bulkCreate)
     .output(stockSchemas.bulkCreateResponse)
     .mutation(async () => {

@@ -33,9 +33,9 @@ import {
 } from '@/types/api/roomCategory';
 import { RoomStatusResponse } from '@/types/api/roomStatus';
 import {
-  BulkCreateIndividualStocksInput,
+  bulkCreateStocksInput,
   GetStocksByFiltersInput,
-  BulkCreateIndividualStocksResponse,
+  bulkCreateStocksResponse,
   GetStocksByFiltersResponse,
 } from '@/types/api/stock';
 import {
@@ -89,7 +89,7 @@ export type RouterInputs = {
     restore: RestoreRoomCategoryInput;
   };
   stocks: {
-    bulkCreateIndividualStocks: BulkCreateIndividualStocksInput;
+    bulkCreateStocks: bulkCreateStocksInput;
     getStocksByFilters: GetStocksByFiltersInput;
   };
   reservations: {
@@ -136,7 +136,7 @@ export type RouterOutputs = {
     getAll: RoomStatusResponse[];
   };
   stocks: {
-    bulkCreateIndividualStocks: BulkCreateIndividualStocksResponse;
+    bulkCreateStocks: bulkCreateStocksResponse;
     getStocksByFilters: GetStocksByFiltersResponse;
   };
   reservations: {

@@ -158,7 +158,7 @@ export const useStocks = (): UseStocksReturn => {
         categoryId: newStock.categoryId,
       };
 
-      await trpcClient.stocks.bulkCreateIndividualStocks.mutate(payload);
+      await trpcClient.stocks.bulkCreateStocks.mutate(payload);
       toast.success('Stock creado exitosamente');
       await fetchStocks();
     } catch (err) {
